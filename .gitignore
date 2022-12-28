@@ -20,7 +20,6 @@ eggs/
 lib/
 lib64/
 models/
-notebooks/
 parts/
 sdist/
 var/
