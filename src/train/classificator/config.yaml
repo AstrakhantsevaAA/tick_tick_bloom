@@ -1,0 +1,23 @@
+train:
+  log_clearml: True
+  epochs: 50
+  task_name: resnet_18_adam
+  model_save_path: resnet_18_adam
+dataloader:
+  augmentations_intensity: 0.5
+  data_dir: /home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/benchmark/image_arrays
+  csv_path: /home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/benchmark/uid_train.csv
+  test_size: 0
+  batch_size: 32
+net:
+  resume_weights: ""
+  freeze_grads: False
+  pretrained: True
+  model_name: resnet18
+optimizer:
+  optimizer_name: adam
+  lr: 0.0003
+scheduler:
+  scheduler: False
+  t0: 1
+  t_mult: 2
