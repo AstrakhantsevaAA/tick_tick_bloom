@@ -1,12 +1,13 @@
 import os
-import torch
-from pathlib import Path
 from dataclasses import dataclass
+from pathlib import Path
+
+import torch
 
 
 @dataclass
 class SystemConfig:
-    root_dir: Path = Path(__file__).parent.parent
+    root_dir: Path = Path(__file__).parents[1]
     model_dir: Path = root_dir / "models"
     data_dir: Path = root_dir / "data"
 

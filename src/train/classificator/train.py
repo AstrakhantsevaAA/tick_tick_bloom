@@ -2,17 +2,17 @@ from pathlib import Path
 from typing import Any
 
 import hydra
-import pandas as pd
 import numpy as np
-from omegaconf import DictConfig
+import pandas as pd
 import torch
 from clearml import Task
+from omegaconf import DictConfig
+from sklearn.metrics import accuracy_score, classification_report
 from torch import nn
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from tqdm import tqdm
-from sklearn.metrics import classification_report, accuracy_score
 
-from src.config import system_config, torch_config, net_config
+from src.config import net_config, system_config, torch_config
 from src.nets.define_net import define_net
 from src.train.classificator.train_utils import (
     Phase,
@@ -26,7 +26,9 @@ class Trainer:
     def __init__(self, cfg: DictConfig):
         self.cfg = cfg
         self.task = (
-            Task.init(project_name="tick_tick_bloom/train", task_name=cfg.train.task_name)
+            Task.init(
+                project_name="tick_tick_bloom/train", task_name=cfg.train.task_name
+            )
             if cfg.train.log_clearml
             else None
         )
@@ -34,6 +36,7 @@ class Trainer:
         self.epochs = cfg.train.epochs
         self.model_save_path = cfg.train.model_save_path
 
+        fix_seeds()
         self.dataloader = create_dataloader(
             data_dir=Path(cfg.dataloader.data_dir),
             csv_path=Path(cfg.dataloader.csv_path),
@@ -53,7 +56,9 @@ class Trainer:
         )
 
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = define_optimizer(cfg.optimizer.optimizer_name, self.model, cfg.optimizer.lr)
+        self.optimizer = define_optimizer(
+            cfg.optimizer.optimizer_name, self.model, cfg.optimizer.lr
+        )
         if cfg.scheduler.scheduler:
             self.scheduler = CosineAnnealingWarmRestarts(
                 self.optimizer,
@@ -66,11 +71,10 @@ class Trainer:
 
     @torch.no_grad()
     def evaluation(
-            self,
-            epoch: int = -1,
-            phase: Any = "val",
+        self,
+        epoch: int = -1,
+        phase: Any = "val",
     ) -> pd.DataFrame:
-
         preds_collector = []
         self.model.eval()
         running_loss = 0.0
@@ -81,7 +85,9 @@ class Trainer:
             probs = nn.functional.softmax(logits, dim=1)
             probs = probs.cpu().detach().numpy()
             preds = np.argmax(probs, axis=1)
-            preds_collector.append(pd.DataFrame({"preds": preds, "labels": batch["label"]}))
+            preds_collector.append(
+                pd.DataFrame({"preds": preds, "labels": batch["label"]})
+            )
 
             loss = self.criterion(logits, batch["label"].to(torch_config.device))
             running_loss += loss.item()
@@ -104,14 +110,16 @@ class Trainer:
         return eval_preds_df
 
     def train_one_epoch(
-            self,
-            epoch: int,
+        self,
+        epoch: int,
     ):
         self.model.train()
         running_loss = 0
 
         print(f"Starting training epoch {epoch}")
-        for batch_n, batch in tqdm(enumerate(self.dataloader[Phase.train]), total=self.train_iters):
+        for batch_n, batch in tqdm(
+            enumerate(self.dataloader[Phase.train]), total=self.train_iters
+        ):
             self.optimizer.zero_grad()
             outputs = self.model(batch["image"].to(torch_config.device))
             loss = self.criterion(outputs, batch["label"].to(torch_config.device))
@@ -130,7 +138,10 @@ class Trainer:
         if self.logger is not None:
             self.logger.report_scalar("Loss", "train", iteration=epoch, value=loss)
             self.logger.report_scalar(
-                "LR", "train", iteration=epoch, value=self.optimizer.param_groups[0]["lr"]
+                "LR",
+                "train",
+                iteration=epoch,
+                value=self.optimizer.param_groups[0]["lr"],
             )
 
         return loss
@@ -140,9 +151,7 @@ class Trainer:
         loss = 0.0
 
         for epoch in range(self.epochs):
-            loss = self.train_one_epoch(
-                epoch
-            )
+            loss = self.train_one_epoch(epoch)
             _ = self.evaluation(
                 epoch,
                 phase=Phase.val.value,
@@ -156,7 +165,8 @@ class Trainer:
                 model_save_path.mkdir(exist_ok=True, parents=True)
                 print(f"Saving model to {model_save_path} as model.pth")
                 torch.save(
-                    self.model, system_config.model_dir / self.model_save_path / "model.pth"
+                    self.model,
+                    system_config.model_dir / self.model_save_path / "model.pth",
                 )
 
         if self.logger is not None:

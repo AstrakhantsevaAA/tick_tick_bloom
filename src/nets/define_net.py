@@ -9,13 +9,12 @@ from src.config import net_config, torch_config
 
 
 def define_net(
-    model_name: str = "resnest-18",
+    model_name: str = "resnet18",
     freeze_grads: bool = False,
     outputs: int = net_config.outputs,
     pretrained: bool = False,
     weights: Optional[str] = None,
 ):
-
     if model_name == "resnet18":
         pretrained_weights = models.ResNet18_Weights.DEFAULT if pretrained else None
         model = models.resnet18(weights=pretrained_weights)

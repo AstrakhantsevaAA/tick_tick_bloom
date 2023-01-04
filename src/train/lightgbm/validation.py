@@ -1,10 +1,9 @@
-import lightgbm as lgb
+from pathlib import Path
 
 import joblib
-from loguru import logger
 import numpy as np
-from pathlib import Path
 import typer
+from loguru import logger
 
 DATA_DIR = Path.cwd().parent / "data/benchmark"
 

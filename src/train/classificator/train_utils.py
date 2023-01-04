@@ -9,8 +9,8 @@ import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from src.config import system_config
 from data_utils.dataset import AlgalDataset
+from src.config import system_config
 
 
 class Phase(Enum):
@@ -53,9 +53,7 @@ def create_dataloader(
             augmentations_intensity=augmentations_intensity,
             test_size=test_size,
         )
-        dataloader[phase] = DataLoader(
-            dataset, batch_size=batch_size, shuffle=shuffle
-        )
+        dataloader[phase] = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
     return dataloader
 
@@ -75,5 +73,3 @@ def define_optimizer(optimizer_name: str, model, lr: float = 4e-3):
         )
 
     return optimizer
-
-

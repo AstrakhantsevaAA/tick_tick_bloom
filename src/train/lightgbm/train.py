@@ -1,10 +1,10 @@
-import lightgbm as lgb
+from pathlib import Path
 
 import joblib
+import lightgbm as lgb
 import numpy as np
-from pathlib import Path
-from loguru import logger
 import typer
+from loguru import logger
 
 DATA_DIR = Path.cwd().parent / "data/benchmark"
 
@@ -25,7 +25,9 @@ def main(
     with open(labels_path, "rb") as f:
         y_train = np.load(f)
 
-    logger.info(f"Loaded training features of shape {X_train.shape} from {features_path}")
+    logger.info(
+        f"Loaded training features of shape {X_train.shape} from {features_path}"
+    )
     logger.info(f"Loading training labels of shape {y_train.shape} from {labels_path}")
 
     # instantiate tree model
