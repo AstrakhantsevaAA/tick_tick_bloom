@@ -37,6 +37,11 @@ def density_mse_loss(inputs: torch.Tensor, targets: torch.Tensor):
 if __name__ == "__main__":
     print(phi_torch(torch.tensor([90000, 2, 0, 14000, 2000, 10000000])))
     print(gamma_torch(torch.tensor([90000, 2, 0, 14000, 2000, 100000000000])))
+    # Output:
+    # tensor([1.0000e+05, 2.0000e+00, 5.0000e-01, 7.0000e+03, 1.0000e+03, 1.0000e+07])
+    # tensor([3.0000, 1.0000, 1.0000, 1.8451, 1.0000, 6.0000])
+
+
 
 
 
