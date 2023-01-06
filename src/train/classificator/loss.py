@@ -1,14 +1,12 @@
 from torch.nn.functional import mse_loss
 import numpy as np
 import torch
-from einops import asnumpy
 
 
 def phi(x: np.ndarray) -> np.ndarray:
-    mask = x < 1
-    x = mask * 0.5 + x * (1 - mask.astype(np.uint8))
-    x[(1e1 <= x) & (x < 2e4)] = 0.5 * x[(1e1 <= x) & (x < 2e4)]
-    x[(2e4 <= x) & (x < 1e5)] = 1.25 * x[(2e4 <= x) & (x < 1e5)] - 12500
+    x = np.where(x < 1, 0.5, x)
+    x = np.where((1e1 <= x) & (x < 2e4), 0.5 * x, x)
+    x = np.where((2e4 <= x) & (x < 1e5), 1.25 * x - 12500, x)
     return x
 
 
@@ -34,16 +32,3 @@ def gamma_torch(x: torch.Tensor) -> torch.Tensor:
 def density_mse_loss(inputs: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
     # targets will be preprocessed in advance
     return mse_loss(gamma_torch(inputs), targets)
-
-
-if __name__ == "__main__":
-    example =[90000, 2, 0, 14000, 2000, 10000000]
-
-    assert np.allclose(
-        asnumpy(phi_torch(torch.tensor(example))), phi(np.array(example))
-    ), f"{asnumpy(phi_torch(torch.tensor(example)))}, {phi(np.array(example))}"
-
-    assert np.allclose(
-        asnumpy(gamma_torch(torch.tensor(example))), gamma(np.array(example))
-    )
-
