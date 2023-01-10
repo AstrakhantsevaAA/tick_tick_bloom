@@ -1,25 +1,21 @@
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import hydra
-import numpy as np
-import pandas as pd
 import torch
 from clearml import Task
 from omegaconf import DictConfig
-from sklearn.metrics import accuracy_score, classification_report
-from torch import nn
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from tqdm import tqdm
 
-from src.config import net_config, system_config, torch_config
+from src.config import net_config, system_config, torch_config, Phase
 from src.nets.define_net import define_net
 from src.train.classificator.train_utils import (
-    Phase,
     create_dataloader,
     define_optimizer,
     fix_seeds,
 )
+from src.train.classificator.loss import DensityMSELoss
 
 
 class Trainer:
@@ -55,7 +51,7 @@ class Trainer:
             weights=cfg.net.resume_weights,
         )
 
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = DensityMSELoss()
         self.optimizer = define_optimizer(
             cfg.optimizer.optimizer_name, self.model, cfg.optimizer.lr
         )
@@ -74,40 +70,22 @@ class Trainer:
         self,
         epoch: int = -1,
         phase: Any = "val",
-    ) -> pd.DataFrame:
-        preds_collector = []
+    ) -> Optional:
         self.model.eval()
         running_loss = 0.0
 
         print(f"Starting {phase} epoch {epoch}")
         for batch in tqdm(self.dataloader[Phase.val], total=self.val_iters):
             logits = self.model.forward(batch["image"].to(torch_config.device))
-            probs = nn.functional.softmax(logits, dim=1)
-            probs = probs.cpu().detach().numpy()
-            preds = np.argmax(probs, axis=1)
-            preds_collector.append(
-                pd.DataFrame({"preds": preds, "labels": batch["label"]})
-            )
-
             loss = self.criterion(logits, batch["label"].to(torch_config.device))
             running_loss += loss.item()
 
-        eval_preds_df = pd.concat(preds_collector, ignore_index=True)
-        accuracy = accuracy_score(eval_preds_df["labels"], eval_preds_df["preds"])
-        print(classification_report(eval_preds_df["labels"], eval_preds_df["preds"]))
-
         if self.logger is not None:
-            self.logger.report_scalar(
-                f"Accuracy",
-                phase,
-                iteration=epoch,
-                value=accuracy,
-            )
             self.logger.report_scalar(
                 f"Loss", phase, iteration=epoch, value=running_loss / self.val_iters
             )
 
-        return eval_preds_df
+        return None
 
     def train_one_epoch(
         self,
