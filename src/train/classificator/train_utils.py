@@ -4,6 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
@@ -23,20 +24,23 @@ def fix_seeds(random_state: int = 42):
 
 def create_dataloader(
     data_dir: Path = system_config.data_dir,
-    csv_path: Path = None,
+    csv_path: Path | pd.DataFrame = None,
     augmentations_intensity: float = 0,
     batch_size: int = 32,
     test_size: int = 0,
+    inference: bool = False,
 ):
     dataloader = defaultdict()
 
-    if csv_path is None or not csv_path:
+    if csv_path is None or len(csv_path) == 0:
         raise Exception(
             "csv files with train and validation data are None, for training those files are necessary"
         )
 
     shuffle = True
     for phase in Phase:
+        if inference and phase == Phase.train:
+            continue
         if phase == Phase.val:
             augmentations_intensity, shuffle = 0.0, False
 
