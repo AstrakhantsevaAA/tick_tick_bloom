@@ -44,6 +44,10 @@ class AlgalDataset(Dataset):
 
     def __getitem__(self, index):
         filepath = str(self.data["filepath"].iloc[index])
+        uid = str(self.data["uid"].iloc[index])
+        severity = int(self.data["severity"].iloc[index])
+        region = str(self.data["region"].iloc[index])
+
         with open(filepath, "rb") as f:
             image = np.load(f)
 
@@ -66,10 +70,13 @@ class AlgalDataset(Dataset):
             label_scaled = gamma_torch(torch.tensor(int(label), dtype=torch.long))
 
         sample = {
+            "uid": uid,
             "image": image,
             "label": label_scaled,
             "label_origin": label,
             "filepath": filepath,
+            "severity": severity,
+            "region": region,
         }
 
         return sample
