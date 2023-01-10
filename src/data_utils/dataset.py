@@ -22,7 +22,7 @@ class AlgalDataset(Dataset):
     def __init__(
         self,
         data_dir: Path,
-        csv_path: Path,
+        csv_path: Path | pd.DataFrame,
         phase: str,
         augmentations_intensity: float = 0.0,
         test_size: int = 0,
@@ -32,7 +32,7 @@ class AlgalDataset(Dataset):
         self.images_dict = defaultdict()
         for image in self.images:
             self.images_dict[image.stem] = image
-        df = pd.read_csv(csv_path)
+        df = pd.read_csv(csv_path) if isinstance(csv_path, Path) else csv_path
         df = df[df["split"] == phase]
         self.data = df if test_size <= 0 else df.iloc[:test_size]
         self.data["filepath"] = self.data.loc[:, "uid"].map(self.images_dict)
