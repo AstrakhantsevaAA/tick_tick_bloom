@@ -1,7 +1,6 @@
 import os
 import random
 from collections import defaultdict
-from enum import Enum
 from pathlib import Path
 
 import numpy as np
@@ -10,12 +9,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 from data_utils.dataset import AlgalDataset
-from src.config import system_config
-
-
-class Phase(Enum):
-    train = "train"
-    val = "validation"
+from src.config import system_config, Phase
 
 
 def fix_seeds(random_state: int = 42):
