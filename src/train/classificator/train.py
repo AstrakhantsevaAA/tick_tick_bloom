@@ -85,7 +85,7 @@ class Trainer:
                 f"Loss", phase, iteration=epoch, value=running_loss / self.val_iters
             )
 
-        return None
+        return running_loss / self.val_iters
 
     def train_one_epoch(
         self,
@@ -127,10 +127,11 @@ class Trainer:
     def train_model(self):
         fix_seeds()
         loss = 0.0
+        best_loss = 0.0
 
         for epoch in range(self.epochs):
             loss = self.train_one_epoch(epoch)
-            _ = self.evaluation(
+            val_loss = self.evaluation(
                 epoch,
                 phase=Phase.val.value,
             )
@@ -146,6 +147,12 @@ class Trainer:
                     self.model,
                     system_config.model_dir / self.model_save_path / "model.pth",
                 )
+                if val_loss < best_loss:
+                    best_loss = val_loss
+                    torch.save(
+                        self.model,
+                        system_config.model_dir / self.model_save_path / "model_best.pth",
+                    )
 
         if self.logger is not None:
             self.logger.flush()
