@@ -4,11 +4,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
-
 from torch.utils.data import Dataset
 
 from src.config import net_config
-from src.data_utils.transforms import define_transform, define_augmentations, gamma_torch
+from src.data_utils.transforms import (
+    define_augmentations,
+    define_transform,
+    gamma_torch,
+)
 
 
 class AlgalDataset(Dataset):

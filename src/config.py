@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
-from pathlib import Path
 from enum import Enum
+from pathlib import Path
 
 import torch
 

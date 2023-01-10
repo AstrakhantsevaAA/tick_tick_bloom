@@ -1,6 +1,6 @@
+from torch import Tensor, sqrt, squeeze
 from torch.nn import MSELoss
 from torch.nn.functional import mse_loss
-from torch import Tensor, sqrt, squeeze
 
 
 class DensityMSELoss(MSELoss):

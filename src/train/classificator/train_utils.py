@@ -9,7 +9,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 from data_utils.dataset import AlgalDataset
-from src.config import system_config, Phase
+from src.config import Phase, system_config
 
 
 def fix_seeds(random_state: int = 42):

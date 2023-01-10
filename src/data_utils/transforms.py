@@ -13,7 +13,7 @@ from albumentations import (
     ShiftScaleRotate,
 )
 from albumentations.pytorch.transforms import ToTensorV2
-from torch import Tensor, uint8, log10
+from torch import Tensor, log10, uint8
 
 
 def phi_torch(x: Tensor) -> Tensor:
@@ -61,4 +61,3 @@ def define_transform():
             ToTensorV2(),
         ]
     )
-

@@ -1,5 +1,5 @@
-import pytest
 import numpy as np
+import pytest
 import torch
 from einops import asnumpy
 
@@ -24,7 +24,7 @@ def example():
 
 @pytest.fixture
 def result():
-    return [2.9482, 1., 1., 1.8451, 1., 5.]
+    return [2.9482, 1.0, 1.0, 1.8451, 1.0, 5.0]
 
 
 def test_gamma(example, result):

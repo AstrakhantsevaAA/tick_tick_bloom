@@ -8,14 +8,14 @@ from omegaconf import DictConfig
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from tqdm import tqdm
 
-from src.config import net_config, system_config, torch_config, Phase
+from src.config import Phase, net_config, system_config, torch_config
 from src.nets.define_net import define_net
+from src.train.classificator.loss import DensityMSELoss
 from src.train.classificator.train_utils import (
     create_dataloader,
     define_optimizer,
     fix_seeds,
 )
-from src.train.classificator.loss import DensityMSELoss
 
 
 class Trainer:
