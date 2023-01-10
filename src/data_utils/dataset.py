@@ -26,8 +26,10 @@ class AlgalDataset(Dataset):
         phase: str,
         augmentations_intensity: float = 0.0,
         test_size: int = 0,
+        inference: bool = False
     ):
         self.data_dir = data_dir
+        self.inference = inference
         self.images = data_dir.rglob("*.npy")
         self.images_dict = defaultdict()
         for image in self.images:
@@ -36,7 +38,8 @@ class AlgalDataset(Dataset):
         df = df[df["split"] == phase]
         self.data = df if test_size <= 0 else df.iloc[:test_size]
         self.data["filepath"] = self.data.loc[:, "uid"].map(self.images_dict)
-        self.labels = self.data.loc[:, net_config.label_column]
+        if not inference:
+            self.labels = self.data.loc[:, net_config.label_column]
         self.transform = define_transform()
         self.augmentation = None
         if augmentations_intensity > 0:
@@ -63,11 +66,16 @@ class AlgalDataset(Dataset):
             image = self.augmentation(image=image)["image"]
 
         image = self.transform(image=image)["image"]
-        label = self.data[net_config.label_column].iloc[index]
-        if net_config.label_column == "severity":
-            label_scaled = int(label) - 1
-        else:
-            label_scaled = gamma_torch(torch.tensor(int(label), dtype=torch.long))
+
+        label_scaled = 0.
+        label = 0.
+
+        if not self.inference:
+            label = self.data[net_config.label_column].iloc[index]
+            if net_config.label_column == "severity":
+                label_scaled = int(label) - 1
+            else:
+                label_scaled = gamma_torch(torch.tensor(int(label), dtype=torch.long))
 
         sample = {
             "uid": uid,

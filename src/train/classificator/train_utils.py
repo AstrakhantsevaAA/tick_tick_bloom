@@ -32,7 +32,7 @@ def create_dataloader(
 ):
     dataloader = defaultdict()
 
-    if csv_path is None or len(csv_path) == 0:
+    if csv_path is None:
         raise Exception(
             "csv files with train and validation data are None, for training those files are necessary"
         )
@@ -50,6 +50,7 @@ def create_dataloader(
             phase=phase.value,
             augmentations_intensity=augmentations_intensity,
             test_size=test_size,
+            inference=inference
         )
         dataloader[phase] = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
