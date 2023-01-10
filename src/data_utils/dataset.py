@@ -4,54 +4,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
-from albumentations import (
-    Affine,
-    Blur,
-    CoarseDropout,
-    ColorJitter,
-    Compose,
-    Downscale,
-    Flip,
-    GridDistortion,
-    Perspective,
-    RandomBrightnessContrast,
-    Resize,
-    ShiftScaleRotate,
-)
-from albumentations.pytorch.transforms import ToTensorV2
+
 from torch.utils.data import Dataset
 
-
-def define_augmentations(augmentations_intensity: float = 0.0):
-    return Compose(
-        [
-            Resize(224, 224),
-            CoarseDropout(
-                p=0.5,
-            ),
-            Blur(p=0.5),
-            ShiftScaleRotate(p=0.5),
-            Affine(),
-            GridDistortion(),
-            Downscale(
-                p=0.5,
-            ),
-            Perspective(p=0.5),
-            Flip(p=0.5),
-            RandomBrightnessContrast(p=0.2),
-            ColorJitter(),
-        ],
-        p=augmentations_intensity,
-    )
-
-
-def define_transform():
-    return Compose(
-        [
-            Resize(224, 224),
-            ToTensorV2(),
-        ]
-    )
+from src.config import net_config
+from src.data_utils.transforms import define_transform, define_augmentations, gamma_torch
 
 
 class AlgalDataset(Dataset):
@@ -76,7 +33,7 @@ class AlgalDataset(Dataset):
         df = df[df["split"] == phase]
         self.data = df if test_size <= 0 else df.iloc[:test_size]
         self.data["filepath"] = self.data.loc[:, "uid"].map(self.images_dict)
-        self.labels = self.data.loc[:, "severity"]
+        self.labels = self.data.loc[:, net_config.label_column]
         self.transform = define_transform()
         self.augmentation = None
         if augmentations_intensity > 0:
@@ -99,13 +56,16 @@ class AlgalDataset(Dataset):
             image = self.augmentation(image=image)["image"]
 
         image = self.transform(image=image)["image"]
-        label = self.data["severity"].iloc[index]
-        label = int(label) - 1
-        label = torch.tensor(label, dtype=torch.long)
+        label = self.data[net_config.label_column].iloc[index]
+        if net_config.label_column == "severity":
+            label_scaled = int(label) - 1
+        else:
+            label_scaled = gamma_torch(torch.tensor(int(label), dtype=torch.long))
 
         sample = {
             "image": image,
-            "label": label,
+            "label": label_scaled,
+            "label_origin": label,
             "filepath": filepath,
         }
 
