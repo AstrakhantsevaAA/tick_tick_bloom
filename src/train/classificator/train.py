@@ -127,7 +127,7 @@ class Trainer:
     def train_model(self):
         fix_seeds()
         loss = 0.0
-        best_loss = 0.0
+        best_loss = 10.0
 
         for epoch in range(self.epochs):
             loss = self.train_one_epoch(epoch)
