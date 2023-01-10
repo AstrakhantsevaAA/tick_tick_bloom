@@ -26,7 +26,7 @@ class AlgalDataset(Dataset):
         phase: str,
         augmentations_intensity: float = 0.0,
         test_size: int = 0,
-        inference: bool = False
+        inference: bool = False,
     ):
         self.data_dir = data_dir
         self.inference = inference
@@ -67,8 +67,8 @@ class AlgalDataset(Dataset):
 
         image = self.transform(image=image)["image"]
 
-        label_scaled = 0.
-        label = 0.
+        label_scaled = 0.0
+        label = 0.0
 
         if not self.inference:
             label = self.data[net_config.label_column].iloc[index]

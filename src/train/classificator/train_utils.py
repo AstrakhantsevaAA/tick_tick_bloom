@@ -50,7 +50,7 @@ def create_dataloader(
             phase=phase.value,
             augmentations_intensity=augmentations_intensity,
             test_size=test_size,
-            inference=inference
+            inference=inference,
         )
         dataloader[phase] = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 

@@ -1,12 +1,13 @@
 import pandas as pd
-import typer
-from src.config import system_config, torch_config, Phase
-from src.nets.define_net import define_net
 import torch
-from src.train.classificator.train_utils import create_dataloader
+import typer
 from einops import asnumpy
-from src.metrics import weighted_rmse
 from tqdm import tqdm
+
+from src.config import Phase, system_config, torch_config
+from src.metrics import weighted_rmse
+from src.nets.define_net import define_net
+from src.train.classificator.train_utils import create_dataloader
 
 
 @torch.no_grad()
@@ -27,22 +28,29 @@ def prediction(model, dataloader):
 
 
 def main(
-        csv_path: str = "submission_format.csv",
-        model_path: str = "/home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/models/sgd_0_0001/model_best.pth"
+    csv_path: str = "submission_format.csv",
+    model_path: str = "/home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/models/sgd_0_0001/model_best.pth",
 ):
     data = pd.read_csv(system_config.data_dir / csv_path)
     if "split" not in data:
         data["split"] = "validation"
 
     model = define_net("resnet18", weights=model_path)
-    dataloader = create_dataloader(system_config.data_dir / "benchmark/image_arrays", data, inference=True)
+    dataloader = create_dataloader(
+        system_config.data_dir / "benchmark/image_arrays", data, inference=True
+    )
     predictions = prediction(model, dataloader[Phase.val])
-    predictions.to_csv(system_config.data_dir / "benchmark/output/prediction_validation.csv", index=False)
+    predictions.to_csv(
+        system_config.data_dir / "benchmark/output/prediction_validation.csv",
+        index=False,
+    )
     weighted_rmse(predictions)
 
     submission = predictions.loc[:, ["uid", "region", "pred_int"]]
     submission.columns = ["uid", "region", "severity"]
-    submission.to_csv(system_config.data_dir / "benchmark/output/submission.csv", index=False)
+    submission.to_csv(
+        system_config.data_dir / "benchmark/output/submission.csv", index=False
+    )
 
 
 if __name__ == "__main__":

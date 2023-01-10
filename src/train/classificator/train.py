@@ -30,7 +30,7 @@ class Trainer:
         )
         self.logger = None if self.task is None else self.task.get_logger()
         self.epochs = cfg.train.epochs
-        self.model_save_path = cfg.train.model_save_path
+        self.model_save_path = system_config.model_dir / cfg.train.model_save_path
 
         fix_seeds()
         self.dataloader = create_dataloader(
@@ -140,18 +140,18 @@ class Trainer:
                 self.scheduler.step()
 
             if self.model_save_path:
-                model_save_path = system_config.model_dir / self.model_save_path
+                model_save_path = self.model_save_path
                 model_save_path.mkdir(exist_ok=True, parents=True)
                 print(f"Saving model to {model_save_path} as model.pth")
                 torch.save(
                     self.model,
-                    system_config.model_dir / self.model_save_path / "model.pth",
+                    self.model_save_path / "model.pth",
                 )
                 if val_loss < best_loss:
                     best_loss = val_loss
                     torch.save(
                         self.model,
-                        system_config.model_dir / self.model_save_path / "model_best.pth",
+                        self.model_save_path / "model_best.pth",
                     )
 
         if self.logger is not None:
