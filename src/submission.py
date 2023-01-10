@@ -6,16 +6,18 @@ import torch
 from src.train.classificator.train_utils import create_dataloader
 from einops import asnumpy
 from src.metrics import weighted_rmse
+from tqdm import tqdm
 
 
 @torch.no_grad()
 def prediction(model, dataloader):
-    output = {"uid": [], "pred": [], "severity": [], "region": []}
+    output = {"uid": [], "pred_raw": [], "pred_int": [], "severity": [], "region": []}
 
-    for batch in dataloader:
+    for batch in tqdm(dataloader):
         logits = model.forward(batch["image"].to(torch_config.device))
         output["uid"].extend(batch["uid"])
-        output["pred"].extend(asnumpy(logits).squeeze())
+        output["pred_raw"].extend(asnumpy(logits).squeeze())
+        output["pred_int"].extend((asnumpy(logits).squeeze()).astype(int))
         output["severity"].extend(asnumpy(batch["severity"]))
         output["region"].extend(batch["region"])
 
@@ -25,18 +27,22 @@ def prediction(model, dataloader):
 
 
 def main(
-        csv_path: str = "benchmark/uid_train.csv",
-        model_path: str = "/home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/models/resnet_18_adam/model.pth"
+        csv_path: str = "submission_format.csv",
+        model_path: str = "/home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/models/sgd_0_0001/model_best.pth"
 ):
     data = pd.read_csv(system_config.data_dir / csv_path)
     if "split" not in data:
         data["split"] = "validation"
 
     model = define_net("resnet18", weights=model_path)
-    dataloader = create_dataloader(system_config.data_dir / "benchmark/image_arrays", data)
+    dataloader = create_dataloader(system_config.data_dir / "benchmark/image_arrays", data, inference=True)
     predictions = prediction(model, dataloader[Phase.val])
-    predictions.to_csv(system_config.data_dir / "benchmark/output/prediction_validation.csv")
+    predictions.to_csv(system_config.data_dir / "benchmark/output/prediction_validation.csv", index=False)
     weighted_rmse(predictions)
+
+    submission = predictions.loc[:, ["uid", "region", "pred_int"]]
+    submission.columns = ["uid", "region", "severity"]
+    submission.to_csv(system_config.data_dir / "benchmark/output/submission.csv", index=False)
 
 
 if __name__ == "__main__":
