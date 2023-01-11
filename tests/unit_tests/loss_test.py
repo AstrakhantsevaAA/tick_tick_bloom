@@ -24,7 +24,7 @@ def example():
 
 @pytest.fixture
 def result():
-    return [2.9482, 1.0, 1.0, 1.8451, 1.0, 5.0]
+    return [2.9481683, 1.0, 1.0, 1.845098, 1.0, 5.0]
 
 
 def test_gamma(example, result):
