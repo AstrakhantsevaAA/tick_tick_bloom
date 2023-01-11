@@ -34,12 +34,10 @@ class AlgalDataset(Dataset):
         self.images_dict = defaultdict()
         for image in self.images:
             self.images_dict[image.stem] = image
-        df = pd.read_csv(csv_path) if isinstance(csv_path, Path) else csv_path
-        df = df[df["split"] == phase]
-        self.data = df if test_size <= 0 else df.iloc[:test_size]
+        self.df_full = pd.read_csv(csv_path) if isinstance(csv_path, Path) else csv_path
+        self.df_split = self.df_full[self.df_full["split"] == phase]
+        self.data = self.df_split if test_size <= 0 else self.df_split.iloc[:test_size]
         self.data["filepath"] = self.data.loc[:, "uid"].map(self.images_dict)
-        if not inference:
-            self.labels = self.data.loc[:, net_config.label_column]
         self.transform = define_transform()
         self.augmentation = None
         if augmentations_intensity > 0:

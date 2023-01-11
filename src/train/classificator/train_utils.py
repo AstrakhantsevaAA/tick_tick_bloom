@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 
 from data_utils.dataset import AlgalDataset
 from src.config import Phase, system_config
+from src.train.classificator.sampler import define_sampler
 
 
 def fix_seeds(random_state: int = 42):
@@ -29,6 +30,7 @@ def create_dataloader(
     batch_size: int = 32,
     test_size: int = 0,
     inference: bool = False,
+    weighted_sampler: bool = False,
 ):
     dataloader = defaultdict()
 
@@ -37,12 +39,12 @@ def create_dataloader(
             "csv files with train and validation data are None, for training those files are necessary"
         )
 
-    shuffle = True
+    shuffle, sampler = True, None
     for phase in Phase:
         if inference and phase == Phase.train:
             continue
         if phase == Phase.val:
-            augmentations_intensity, shuffle = 0.0, False
+            augmentations_intensity, shuffle, sampler = 0.0, False, None
 
         dataset = AlgalDataset(
             data_dir=data_dir,
@@ -52,7 +54,13 @@ def create_dataloader(
             test_size=test_size,
             inference=inference,
         )
-        dataloader[phase] = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+
+        if phase == Phase.train:
+            sampler = define_sampler(dataset) if weighted_sampler else None
+            shuffle = True if sampler is None else False
+        dataloader[phase] = DataLoader(
+            dataset, batch_size=batch_size, shuffle=shuffle, sampler=sampler
+        )
 
     return dataloader
 

@@ -39,6 +39,7 @@ class Trainer:
             augmentations_intensity=cfg.dataloader.augmentations_intensity,
             batch_size=cfg.dataloader.batch_size,
             test_size=cfg.dataloader.test_size,
+            weighted_sampler=cfg.dataloader.weighted_sampler,
         )
         self.train_iters = len(self.dataloader[Phase.train])
         self.val_iters = len(self.dataloader[Phase.val])
@@ -142,7 +143,6 @@ class Trainer:
             if self.model_save_path:
                 model_save_path = self.model_save_path
                 model_save_path.mkdir(exist_ok=True, parents=True)
-                print(f"Saving model to {model_save_path} as model.pth")
                 torch.save(
                     self.model,
                     self.model_save_path / "model.pth",
@@ -153,6 +153,7 @@ class Trainer:
                         self.model,
                         self.model_save_path / "model_best.pth",
                     )
+                    print(f"Saving best model to {model_save_path} as model.pth")
 
         if self.logger is not None:
             self.logger.flush()
