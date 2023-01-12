@@ -9,7 +9,9 @@ from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from tqdm import tqdm
 
 from src.config import Phase, net_config, system_config, torch_config
+from src.metrics import weighted_rmse
 from src.nets.define_net import define_net
+from src.submission import prediction
 from src.train.classificator.loss import DensityMSELoss
 from src.train.classificator.train_utils import (
     create_dataloader,
@@ -30,7 +32,11 @@ class Trainer:
         )
         self.logger = None if self.task is None else self.task.get_logger()
         self.epochs = cfg.train.epochs
-        self.model_save_path = system_config.model_dir / cfg.train.model_save_path
+        self.model_save_path = (
+            system_config.model_dir / cfg.train.model_save_path
+            if len(cfg.train.model_save_path) > 0
+            else None
+        )
 
         fix_seeds()
         self.dataloader = create_dataloader(
@@ -73,20 +79,22 @@ class Trainer:
         phase: Any = "val",
     ) -> Optional:
         self.model.eval()
-        running_loss = 0.0
-
         print(f"Starting {phase} epoch {epoch}")
-        for batch in tqdm(self.dataloader[Phase.val], total=self.val_iters):
-            logits = self.model.forward(batch["image"].to(torch_config.device))
-            loss = self.criterion(logits, batch["label"].to(torch_config.device))
-            running_loss += loss.item()
+        predictions, running_loss = prediction(
+            self.model, self.dataloader[Phase.val], self.criterion
+        )
+        loss = running_loss / self.val_iters
+        overall_rmse, region_scores = weighted_rmse(predictions)
 
         if self.logger is not None:
+            self.logger.report_scalar(f"Loss", phase, iteration=epoch, value=loss)
             self.logger.report_scalar(
-                f"Loss", phase, iteration=epoch, value=running_loss / self.val_iters
+                f"Overall rMSE", phase, iteration=epoch, value=overall_rmse
             )
+            for k, v in region_scores.items():
+                self.logger.report_scalar(f"rMSE {k}", phase, iteration=epoch, value=v)
 
-        return running_loss / self.val_iters
+        return loss, overall_rmse
 
     def train_one_epoch(
         self,
@@ -128,11 +136,11 @@ class Trainer:
     def train_model(self):
         fix_seeds()
         loss = 0.0
-        best_loss = 10.0
+        best_rmse = 10.0
 
         for epoch in range(self.epochs):
             loss = self.train_one_epoch(epoch)
-            val_loss = self.evaluation(
+            val_loss, overall_rmse = self.evaluation(
                 epoch,
                 phase=Phase.val.value,
             )
@@ -147,13 +155,13 @@ class Trainer:
                     self.model,
                     self.model_save_path / "model.pth",
                 )
-                if val_loss < best_loss:
-                    best_loss = val_loss
+                if overall_rmse < best_rmse:
+                    best_rmse = overall_rmse
                     torch.save(
                         self.model,
                         self.model_save_path / "model_best.pth",
                     )
-                    print(f"Saving best model to {model_save_path} as model.pth")
+                    print(f"Saving best model to {model_save_path} as model_best.pth")
 
         if self.logger is not None:
             self.logger.flush()

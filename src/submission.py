@@ -14,7 +14,11 @@ from src.train.classificator.train_utils import create_dataloader
 
 
 @no_grad()
-def prediction(model: Any, dataloader: DataLoader) -> pd.DataFrame:
+def prediction(
+    model: Any, dataloader: DataLoader, criterion: Any | None = None
+) -> (pd.DataFrame, float):
+    model.eval()
+    running_loss = 0.0
     output = {"uid": [], "pred_raw": [], "pred_int": [], "severity": [], "region": []}
 
     for batch in tqdm(dataloader):
@@ -25,9 +29,13 @@ def prediction(model: Any, dataloader: DataLoader) -> pd.DataFrame:
         output["severity"].extend(asnumpy(batch["severity"]))
         output["region"].extend(batch["region"])
 
+        if criterion:
+            loss = criterion(logits, batch["label"].to(torch_config.device))
+            running_loss += loss.item()
+
     df_output = pd.DataFrame(output)
 
-    return df_output
+    return df_output, running_loss
 
 
 def main(
@@ -47,7 +55,7 @@ def main(
         system_config.data_dir / csv_path,
         inference=inference,
     )
-    predictions = prediction(model, dataloader[Phase.val])
+    predictions, _ = prediction(model, dataloader[Phase.val])
     predictions.to_csv(
         outputs_save_path / "prediction_validation.csv",
         index=False,
