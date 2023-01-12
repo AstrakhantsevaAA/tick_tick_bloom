@@ -31,6 +31,7 @@ class NetConfig:
 class Phase(Enum):
     train = "train"
     val = "validation"
+    test = "test"
 
 
 system_config = SystemConfig()

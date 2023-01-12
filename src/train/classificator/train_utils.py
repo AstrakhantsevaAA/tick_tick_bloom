@@ -40,10 +40,10 @@ def create_dataloader(
         )
 
     shuffle, sampler = True, None
-    for phase in Phase:
-        if inference and phase == Phase.train:
-            continue
-        if phase == Phase.val:
+    phases = [Phase.test] if inference else [Phase.train, Phase.val]
+
+    for phase in phases:
+        if phase in [Phase.val, Phase.test]:
             augmentations_intensity, shuffle, sampler = 0.0, False, None
 
         dataset = AlgalDataset(
@@ -58,6 +58,7 @@ def create_dataloader(
         if phase == Phase.train:
             sampler = define_sampler(dataset) if weighted_sampler else None
             shuffle = True if sampler is None else False
+
         dataloader[phase] = DataLoader(
             dataset, batch_size=batch_size, shuffle=shuffle, sampler=sampler
         )
