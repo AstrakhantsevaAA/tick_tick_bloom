@@ -1,7 +1,10 @@
+from typing import Any
+
 import pandas as pd
-import torch
 import typer
 from einops import asnumpy
+from torch import no_grad
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from src.config import Phase, system_config, torch_config
@@ -10,8 +13,8 @@ from src.nets.define_net import define_net
 from src.train.classificator.train_utils import create_dataloader
 
 
-@torch.no_grad()
-def prediction(model, dataloader):
+@no_grad()
+def prediction(model: Any, dataloader: DataLoader) -> pd.DataFrame:
     output = {"uid": [], "pred_raw": [], "pred_int": [], "severity": [], "region": []}
 
     for batch in tqdm(dataloader):
@@ -28,29 +31,37 @@ def prediction(model, dataloader):
 
 
 def main(
-    csv_path: str = "submission_format.csv",
-    model_path: str = "/home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/models/sgd_0_0001/model_best.pth",
+    csv_path: str = "splits/balanced_validation/dumb_split_full_df.csv",
+    model_path: str = "weighted_sampler_300epoch/model_best.pth",
+    inference: bool = False,
 ):
-    data = pd.read_csv(system_config.data_dir / csv_path)
-    if "split" not in data:
-        data["split"] = "validation"
+    outputs_save_path = (
+        system_config.data_dir
+        / f"outputs/{model_path.split('/')[-2]}_{csv_path.split('/')[-1]}"
+    )
+    outputs_save_path.mkdir(parents=True, exist_ok=True)
 
-    model = define_net("resnet18", weights=model_path)
+    model = define_net("resnet18", weights=system_config.model_dir / model_path)
     dataloader = create_dataloader(
-        system_config.data_dir / "benchmark/image_arrays", data, inference=True
+        system_config.data_dir / "benchmark/image_arrays",
+        system_config.data_dir / csv_path,
+        inference=inference,
     )
     predictions = prediction(model, dataloader[Phase.val])
     predictions.to_csv(
-        system_config.data_dir / "benchmark/output/prediction_validation.csv",
+        outputs_save_path / "prediction_validation.csv",
         index=False,
     )
+
     weighted_rmse(predictions)
 
-    submission = predictions.loc[:, ["uid", "region", "pred_int"]]
-    submission.columns = ["uid", "region", "severity"]
-    submission.to_csv(
-        system_config.data_dir / "benchmark/output/submission.csv", index=False
-    )
+    if inference:
+        submission = predictions.loc[:, ["uid", "region", "pred_int"]]
+        submission.columns = ["uid", "region", "severity"]
+        submission.to_csv(
+            outputs_save_path / "submission.csv",
+            index=False,
+        )
 
 
 if __name__ == "__main__":
