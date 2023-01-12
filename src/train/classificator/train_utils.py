@@ -32,6 +32,7 @@ def create_dataloader(
     inference: bool = False,
     weighted_sampler: bool = False,
 ):
+    fix_seeds()
     dataloader = defaultdict()
 
     if csv_path is None:
