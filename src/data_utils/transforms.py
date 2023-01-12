@@ -31,7 +31,7 @@ def gamma_torch(x: Tensor) -> Tensor:
     return log10(phi_torch(x) / 100).clip(1, 5)
 
 
-def define_augmentations(augmentations_intensity: float = 0.0):
+def define_augmentations(augmentations_intensity: float = 0.0) -> Compose:
     return Compose(
         [
             Resize(224, 224),
@@ -54,7 +54,7 @@ def define_augmentations(augmentations_intensity: float = 0.0):
     )
 
 
-def define_transform():
+def define_transform() -> Compose:
     return Compose(
         [
             Resize(224, 224),

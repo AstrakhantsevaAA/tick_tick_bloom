@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import hydra
 import torch
@@ -78,7 +78,7 @@ class Trainer:
         self,
         epoch: int = -1,
         phase: Any = "val",
-    ) -> Optional:
+    ) -> (float, float):
         self.model.eval()
         logger.info(f"Starting {phase} epoch {epoch}")
         predictions, running_loss = prediction(
@@ -104,7 +104,7 @@ class Trainer:
     def train_one_epoch(
         self,
         epoch: int,
-    ):
+    ) -> float:
         self.model.train()
         running_loss = 0
 
@@ -140,7 +140,7 @@ class Trainer:
 
         return loss_total
 
-    def train_model(self):
+    def train_model(self) -> float:
         fix_seeds()
         loss = 0.0
         best_rmse = 10.0

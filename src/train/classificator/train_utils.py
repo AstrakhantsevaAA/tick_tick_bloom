@@ -2,6 +2,7 @@ import os
 import random
 from collections import defaultdict
 from pathlib import Path
+from typing import Any, DefaultDict
 
 import numpy as np
 import pandas as pd
@@ -31,7 +32,7 @@ def create_dataloader(
     test_size: int = 0,
     inference: bool = False,
     weighted_sampler: bool = False,
-):
+) -> DefaultDict[DataLoader]:
     fix_seeds()
     dataloader = defaultdict()
 
@@ -67,7 +68,7 @@ def create_dataloader(
     return dataloader
 
 
-def define_optimizer(optimizer_name: str, model, lr: float = 4e-3):
+def define_optimizer(optimizer_name: str, model, lr: float = 4e-3) -> Any:
     if optimizer_name == "sgd":
         optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
     elif optimizer_name == "adam":

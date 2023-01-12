@@ -6,7 +6,7 @@ from sklearn.metrics import mean_squared_error
 from src.config import system_config
 
 
-def weighted_rmse(data: pd.DataFrame):
+def weighted_rmse(data: pd.DataFrame) -> (float, dict):
     regions = data.region.unique()
     region_scores = {k: [] for k in regions}
     for region in regions:
