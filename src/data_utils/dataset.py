@@ -38,6 +38,7 @@ class AlgalDataset(Dataset):
         self.df_split = self.df_full[self.df_full["split"] == phase]
         self.data = self.df_split if test_size <= 0 else self.df_split.iloc[:test_size]
         self.data["filepath"] = self.data.loc[:, "uid"].map(self.images_dict)
+        self.regions = self.data.loc[:, "region"]
         self.transform = define_transform()
         self.augmentation = None
         if augmentations_intensity > 0:
