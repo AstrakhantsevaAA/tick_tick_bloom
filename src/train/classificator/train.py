@@ -4,6 +4,7 @@ from typing import Any, Optional
 import hydra
 import torch
 from clearml import Task
+from loguru import logger
 from omegaconf import DictConfig
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from tqdm import tqdm
@@ -30,7 +31,7 @@ class Trainer:
             if cfg.train.log_clearml
             else None
         )
-        self.logger = None if self.task is None else self.task.get_logger()
+        self.clearml_logger = None if self.task is None else self.task.get_logger()
         self.epochs = cfg.train.epochs
         self.model_save_path = (
             system_config.model_dir / cfg.train.model_save_path
@@ -79,20 +80,24 @@ class Trainer:
         phase: Any = "val",
     ) -> Optional:
         self.model.eval()
-        print(f"Starting {phase} epoch {epoch}")
+        logger.info(f"Starting {phase} epoch {epoch}")
         predictions, running_loss = prediction(
             self.model, self.dataloader[Phase.val], self.criterion
         )
         loss = running_loss / self.val_iters
         overall_rmse, region_scores = weighted_rmse(predictions)
 
-        if self.logger is not None:
-            self.logger.report_scalar(f"Loss", phase, iteration=epoch, value=loss)
-            self.logger.report_scalar(
+        if self.clearml_logger is not None:
+            self.clearml_logger.report_scalar(
+                f"Loss", phase, iteration=epoch, value=loss
+            )
+            self.clearml_logger.report_scalar(
                 f"Overall rMSE", phase, iteration=epoch, value=overall_rmse
             )
             for k, v in region_scores.items():
-                self.logger.report_scalar(f"rMSE {k}", phase, iteration=epoch, value=v)
+                self.clearml_logger.report_scalar(
+                    f"rMSE {k}", phase, iteration=epoch, value=v
+                )
 
         return loss, overall_rmse
 
@@ -103,7 +108,7 @@ class Trainer:
         self.model.train()
         running_loss = 0
 
-        print(f"Starting training epoch {epoch}")
+        logger.info(f"Starting training epoch {epoch}")
         for batch_n, batch in tqdm(
             enumerate(self.dataloader[Phase.train]), total=self.train_iters
         ):
@@ -114,17 +119,19 @@ class Trainer:
             loss.backward()
             self.optimizer.step()
 
-            if self.logger is not None:
-                self.logger.report_scalar(
+            if self.clearml_logger is not None:
+                self.clearml_logger.report_scalar(
                     f"Running_loss",
                     "train",
                     iteration=(epoch + 1) * batch_n,
                     value=running_loss / (batch_n + 1),
                 )
         loss = running_loss / self.train_iters
-        if self.logger is not None:
-            self.logger.report_scalar("Loss", "train", iteration=epoch, value=loss)
-            self.logger.report_scalar(
+        if self.clearml_logger is not None:
+            self.clearml_logger.report_scalar(
+                "Loss", "train", iteration=epoch, value=loss
+            )
+            self.clearml_logger.report_scalar(
                 "LR",
                 "train",
                 iteration=epoch,
@@ -161,10 +168,12 @@ class Trainer:
                         self.model,
                         self.model_save_path / "model_best.pth",
                     )
-                    print(f"Saving best model to {model_save_path} as model_best.pth")
+                    logger.success(
+                        f"Saving best model to {model_save_path} as model_best.pth"
+                    )
 
-        if self.logger is not None:
-            self.logger.flush()
+        if self.clearml_logger is not None:
+            self.clearml_logger.flush()
 
         return loss
 

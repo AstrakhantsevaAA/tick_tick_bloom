@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from loguru import logger
 from sklearn.metrics import mean_squared_error
 
 from src.config import system_config
@@ -13,11 +14,11 @@ def weighted_rmse(data: pd.DataFrame):
         region_rmse = mean_squared_error(
             sub.severity, sub.pred_int.values, squared=False
         )
-        print(f"RMSE for {region} (n={len(sub)}): {round(region_rmse, 4)}")
+        logger.info(f"RMSE for {region} (n={len(sub)}): {round(region_rmse, 4)}")
         region_scores[region] = region_rmse
 
     overall_rmse = np.mean(list(region_scores.values()))
-    print(f"Final score: {overall_rmse}")
+    logger.info(f"Final score: {overall_rmse}")
     return overall_rmse, region_scores
 
 
