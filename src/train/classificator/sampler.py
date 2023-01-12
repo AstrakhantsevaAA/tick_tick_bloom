@@ -27,7 +27,7 @@ def define_sampler(dataset: AlgalDataset) -> WeightedRandomSampler:
     logger.info(f"Adversarial weights: {weights_adv}")
 
     sampler = WeightedRandomSampler(
-        [weights_adv[x] for x in dataset.regions],
+        [weights_test[x] for x in dataset.regions],
         len(dataset.regions),
     )
 
