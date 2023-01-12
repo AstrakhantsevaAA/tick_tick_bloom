@@ -126,10 +126,10 @@ class Trainer:
                     iteration=(epoch + 1) * batch_n,
                     value=running_loss / (batch_n + 1),
                 )
-        loss = running_loss / self.train_iters
+        loss_total = running_loss / self.train_iters
         if self.clearml_logger is not None:
             self.clearml_logger.report_scalar(
-                "Loss", "train", iteration=epoch, value=loss
+                "Loss", "train", iteration=epoch, value=loss_total
             )
             self.clearml_logger.report_scalar(
                 "LR",
@@ -138,7 +138,7 @@ class Trainer:
                 value=self.optimizer.param_groups[0]["lr"],
             )
 
-        return loss
+        return loss_total
 
     def train_model(self):
         fix_seeds()
