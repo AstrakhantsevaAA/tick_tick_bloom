@@ -27,12 +27,16 @@ def result():
     return [2.9481683, 1.0, 1.0, 1.845098, 1.0, 5.0]
 
 
-def test_gamma(example, result):
+def test_gamma(example):
     print(gamma_torch(torch.tensor(example)))
     assert np.allclose(
         asnumpy(gamma_torch(torch.tensor(example))), gamma(np.array(example))
     )
-    assert np.allclose(asnumpy(gamma_torch(torch.tensor(example))), np.array(result))
+
+
+def test_result(example, result):
+    transformed = asnumpy(gamma_torch(torch.tensor(example)))
+    assert np.allclose(transformed, np.array(result)), f"{transformed}\n {result}"
 
 
 def test_phi(example):
