@@ -21,6 +21,7 @@ class TestTrainLoop:
                     "augmentations_intensity": 0.5,
                     "test_size": 10,
                     "batch_size": 2,
+                    "weighted_sampler": True,
                 },
                 "net": {
                     "resume_weights": "",
