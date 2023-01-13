@@ -21,6 +21,7 @@ class TestTrainLoop:
                     "augmentations_intensity": 0.5,
                     "test_size": 10,
                     "batch_size": 2,
+                    "weighted_sampler": True,
                 },
                 "net": {
                     "resume_weights": "",
@@ -36,8 +37,10 @@ class TestTrainLoop:
 
     def test_loss_decreasing(self, set_conf):
         trainer = Trainer(set_conf)
-        loss1 = trainer.train_one_epoch(1)
-        loss2 = trainer.train_one_epoch(2)
+        loss1 = trainer.train_one_epoch(0)
+        loss2 = 10.0
+        for i in range(1, 10):
+            loss2 = trainer.train_one_epoch(i)
 
         assert loss1 > loss2
 

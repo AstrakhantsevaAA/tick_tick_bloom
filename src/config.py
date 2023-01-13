@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 
 import torch
@@ -23,7 +24,14 @@ class TorchConfig:
 
 @dataclass
 class NetConfig:
-    outputs = 5
+    outputs = 1
+    label_column = "density"
+
+
+class Phase(Enum):
+    train = "train"
+    val = "validation"
+    test = "test"
 
 
 system_config = SystemConfig()
