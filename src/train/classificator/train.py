@@ -152,7 +152,7 @@ class Trainer:
                 phase=Phase.val.value,
             )
 
-            if self.scheduler:
+            if self.scheduler and (epoch + 1) % 10 == 0:
                 self.scheduler.step()
 
             if self.model_save_path:

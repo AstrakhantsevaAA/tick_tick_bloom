@@ -40,8 +40,8 @@ def prediction(
 
 def main(
     csv_path: str = "splits/balanced_validation/dumb_split_full_df.csv",
-    model_path: str = "weighted_sampler_300epoch/model_best.pth",
-    inference: bool = False,
+    model_path: str = "weighted_sampler/model_best.pth",
+    inference: bool = True,
 ):
     outputs_save_path = (
         system_config.data_dir
@@ -55,13 +55,12 @@ def main(
         system_config.data_dir / csv_path,
         inference=inference,
     )
-    predictions, _ = prediction(model, dataloader[Phase.val])
+    phase = Phase.test if inference else Phase.val
+    predictions, _ = prediction(model, dataloader[phase])
     predictions.to_csv(
         outputs_save_path / "prediction_validation.csv",
         index=False,
     )
-
-    weighted_rmse(predictions)
 
     if inference:
         submission = predictions.loc[:, ["uid", "region", "pred_int"]]
@@ -70,6 +69,8 @@ def main(
             outputs_save_path / "submission.csv",
             index=False,
         )
+    else:
+        weighted_rmse(predictions)
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
+from loguru import logger
 from torch.utils.data import Dataset
 
 from src.config import net_config
@@ -34,10 +35,18 @@ class AlgalDataset(Dataset):
         self.images_dict = defaultdict()
         for image in self.images:
             self.images_dict[image.stem] = image
+
         self.df_full = pd.read_csv(csv_path) if isinstance(csv_path, Path) else csv_path
         self.df_split = self.df_full[self.df_full["split"] == phase]
         self.data = self.df_split if test_size <= 0 else self.df_split.iloc[:test_size]
-        self.data["filepath"] = self.data.loc[:, "uid"].map(self.images_dict)
+        try:
+            self.data["filepath"] = self.data.loc[:, "uid"].map(self.images_dict)
+        except KeyError as e:
+            logger.warning(f"Not all data were downloaded:\n{e}")
+            self.data["filepath"] = self.data.loc[:, "uid"].apply(
+                lambda x: self.images_dict[x] if x in self.images_dict.keys() else None
+            )
+
         self.regions = self.data.loc[:, "region"]
         self.transform = define_transform()
         self.augmentation = None
@@ -47,18 +56,18 @@ class AlgalDataset(Dataset):
     def __getitem__(self, index):
         filepath = str(self.data["filepath"].iloc[index])
         uid = str(self.data["uid"].iloc[index])
-        severity = int(self.data["severity"].iloc[index])
+        severity = int(self.data["severity"].iloc[index]) if not self.inference else 0
         region = str(self.data["region"].iloc[index])
 
         with open(filepath, "rb") as f:
-            image = np.load(f)
+            image_orig = np.load(f)
 
-        if image is None:
+        if image_orig is None:
             raise Exception(
                 f"image is None, got filepath: {filepath} \n data: {self.data}"
             )
 
-        image = image.astype("float32") / 255.0
+        image = image_orig.astype("float32") / 255.0
         image = np.transpose(image, (1, 2, 0))
 
         if self.augmentation is not None:
@@ -66,8 +75,7 @@ class AlgalDataset(Dataset):
 
         image = self.transform(image=image)["image"]
 
-        label_scaled = 0.0
-        label = 0.0
+        label_scaled, label = 0.0, 0.0
 
         if not self.inference:
             label = self.data[net_config.label_column].iloc[index]
@@ -88,5 +96,5 @@ class AlgalDataset(Dataset):
 
         return sample
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.data)

@@ -32,7 +32,7 @@ def create_dataloader(
     test_size: int = 0,
     inference: bool = False,
     weighted_sampler: bool = False,
-) -> DefaultDict[DataLoader]:
+) -> DefaultDict[Phase, DataLoader]:
     fix_seeds()
     dataloader = defaultdict()
 
