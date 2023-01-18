@@ -32,6 +32,7 @@ def create_dataloader(
     test_size: int = 0,
     inference: bool = False,
     weighted_sampler: bool = False,
+    save_preprocessed: str = system_config.data_dir / "preprocessed/test",
 ) -> DefaultDict[Phase, DataLoader]:
     fix_seeds()
     dataloader = defaultdict()
@@ -55,6 +56,7 @@ def create_dataloader(
             augmentations_intensity=augmentations_intensity,
             test_size=test_size,
             inference=inference,
+            save_preprocessed=save_preprocessed,
         )
 
         if phase == Phase.train:

@@ -47,6 +47,7 @@ class Trainer:
             batch_size=cfg.dataloader.batch_size,
             test_size=cfg.dataloader.test_size,
             weighted_sampler=cfg.dataloader.weighted_sampler,
+            save_preprocessed=cfg.dataloader.save_preprocessed,
         )
         self.train_iters = len(self.dataloader[Phase.train])
         self.val_iters = len(self.dataloader[Phase.val])
@@ -57,6 +58,7 @@ class Trainer:
             outputs=net_config.outputs,
             pretrained=cfg.net.pretrained,
             weights=cfg.net.resume_weights,
+            new_in_channels=cfg.net.new_in_channels,
         )
 
         self.criterion = DensityMSELoss()
