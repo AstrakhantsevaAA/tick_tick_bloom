@@ -14,6 +14,7 @@ def define_net(
     outputs: int = net_config.outputs,
     pretrained: bool = False,
     weights: Optional[str] = None,
+    new_in_channels: int = net_config.in_channels,
 ):
     if model_name == "resnet18":
         pretrained_weights = models.ResNet18_Weights.DEFAULT if pretrained else None
@@ -39,6 +40,41 @@ def define_net(
         raise Exception(
             f"Unsupported model_name, expected resnet18, resnet50, resnest-50, rexnet-100, convnext got {model_name}"
         )
+
+    if new_in_channels:
+        try:
+            layer = model.conv1
+        except AttributeError:
+            layer = model.stem.conv
+
+        new_layer = nn.Conv2d(
+            in_channels=new_in_channels,
+            out_channels=layer.out_channels,
+            kernel_size=layer.kernel_size,
+            stride=layer.stride,
+            padding=layer.padding,
+            bias=layer.bias,
+        )
+        if pretrained:
+            copy_weights = 0  # Here will initialize the weights from new channel with the red channel weights
+
+            # Copying the weights from the old to the new layer
+            new_layer.weight[
+                :, : layer.in_channels, :, :
+            ].data = layer.weight.data.clone()
+
+            # Copying the weights of the `copy_weights` channel of the old layer to the extra channels of the new layer
+            for i in range(new_in_channels - layer.in_channels):
+                channel = layer.in_channels + i
+                new_layer.weight[:, channel : channel + 1, :, :].data = layer.weight[
+                    :, copy_weights : copy_weights + 1, ::
+                ].data.clone()
+            new_layer.weight = nn.Parameter(new_layer.weight)
+
+        try:
+            model.conv1 = new_layer
+        except AttributeError:
+            model.stem.conv = new_layer
 
     if freeze_grads:
         for params in model.parameters():
