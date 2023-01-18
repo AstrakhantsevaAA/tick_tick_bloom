@@ -1,19 +1,22 @@
+import numpy as np
 from albumentations import (
     Affine,
     Blur,
     CoarseDropout,
-    ColorJitter,
     Compose,
     Downscale,
     Flip,
     GridDistortion,
     Perspective,
     RandomBrightnessContrast,
+    RandomCrop,
     Resize,
     ShiftScaleRotate,
 )
 from albumentations.pytorch.transforms import ToTensorV2
-from torch import Tensor, log10, uint8
+from torch import Tensor, log10, manual_seed, uint8
+
+manual_seed(17)
 
 
 def phi_torch(x: Tensor) -> Tensor:
@@ -48,7 +51,7 @@ def define_augmentations(augmentations_intensity: float = 0.0) -> Compose:
             Perspective(p=0.5),
             Flip(p=0.5),
             RandomBrightnessContrast(p=0.2),
-            ColorJitter(),
+            # ColorJitter(),
         ],
         p=augmentations_intensity,
     )
@@ -57,7 +60,14 @@ def define_augmentations(augmentations_intensity: float = 0.0) -> Compose:
 def define_transform() -> Compose:
     return Compose(
         [
-            Resize(224, 224),
+            Resize(256, 256),
+            RandomCrop(224, 224),
             ToTensorV2(),
         ]
     )
+
+
+def normalize(input: np.ndarray, mean: list, std: list) -> np.ndarray:
+    # input shape: HxWxC
+    output = (input - mean) / std
+    return output
