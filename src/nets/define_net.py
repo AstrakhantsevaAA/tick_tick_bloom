@@ -42,9 +42,9 @@ def define_net(
         )
 
     if new_in_channels:
-        try:
+        if "resnet" in model_name:
             layer = model.conv1
-        except AttributeError:
+        else:
             layer = model.stem.conv
 
         new_layer = nn.Conv2d(
@@ -71,9 +71,9 @@ def define_net(
                 ].data.clone()
             new_layer.weight = nn.Parameter(new_layer.weight)
 
-        try:
+        if "resnet" in model_name:
             model.conv1 = new_layer
-        except AttributeError:
+        else:
             model.stem.conv = new_layer
 
     if freeze_grads:
