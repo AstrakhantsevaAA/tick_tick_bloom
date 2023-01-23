@@ -5,8 +5,7 @@ import hydra
 import torch
 from clearml import Task
 from loguru import logger
-from omegaconf import DictConfig
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
+from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 
 from src.config import Phase, net_config, system_config, torch_config
@@ -17,6 +16,7 @@ from src.train.classificator.loss import DensityMSELoss
 from src.train.classificator.train_utils import (
     create_dataloader,
     define_optimizer,
+    define_scheduler,
     fix_seeds,
 )
 
@@ -65,15 +65,27 @@ class Trainer:
         self.optimizer = define_optimizer(
             cfg.optimizer.optimizer_name, self.model, cfg.optimizer.lr
         )
-        if cfg.scheduler.scheduler:
-            self.scheduler = CosineAnnealingWarmRestarts(
-                self.optimizer,
-                T_0=cfg.scheduler.t0,
-                T_mult=cfg.scheduler.t_mult,
-                eta_min=0.000001,
+        self.scheduler = None
+        if cfg.scheduler.scheduler_name:
+            self.params = OmegaConf.to_container(cfg.scheduler)
+            self.scheduler = define_scheduler(self.optimizer, self.params)
+
+    def save_model(self, overall_rmse: float, best_rmse: float):
+        self.model_save_path.mkdir(exist_ok=True, parents=True)
+        torch.save(
+            self.model,
+            self.model_save_path / "model.pth",
+        )
+        if overall_rmse < best_rmse:
+            best_rmse = overall_rmse
+            torch.save(
+                self.model,
+                self.model_save_path / "model_best.pth",
             )
-        else:
-            self.scheduler = None
+            logger.success(
+                f"Saving best model to {self.model_save_path} as model_best.pth"
+            )
+        return best_rmse
 
     @torch.no_grad()
     def evaluation(
@@ -154,25 +166,15 @@ class Trainer:
                 phase=Phase.val.value,
             )
 
-            if self.scheduler and (epoch + 1) % 10 == 0:
+            if self.cfg.scheduler.scheduler_name == "ReduceLROnPlateau":
+                if self.optimizer.param_groups[0]["lr"] <= 0.000003:
+                    self.optimizer.param_groups[0]["lr"] = self.cfg.optimizer.lr
+                self.scheduler.step(overall_rmse)
+            else:
                 self.scheduler.step()
 
             if self.model_save_path:
-                model_save_path = self.model_save_path
-                model_save_path.mkdir(exist_ok=True, parents=True)
-                torch.save(
-                    self.model,
-                    self.model_save_path / "model.pth",
-                )
-                if overall_rmse < best_rmse:
-                    best_rmse = overall_rmse
-                    torch.save(
-                        self.model,
-                        self.model_save_path / "model_best.pth",
-                    )
-                    logger.success(
-                        f"Saving best model to {model_save_path} as model_best.pth"
-                    )
+                best_rmse = self.save_model(overall_rmse, best_rmse)
 
         if self.clearml_logger is not None:
             self.clearml_logger.flush()
