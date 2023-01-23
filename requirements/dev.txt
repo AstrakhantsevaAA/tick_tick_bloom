@@ -9,3 +9,5 @@ odc-stac==0.3.4
 geopandas==0.12.2
 geopy==2.3.0
 rioxarray==0.13.3
+tables==3.8.0
+pyarrow==10.0.1
