@@ -13,6 +13,14 @@ from src.nets.define_net import define_net
 from src.train.classificator.train_utils import create_dataloader
 
 
+def add_not_loaded(out: pd.DataFrame, submission: pd.DataFrame) -> pd.DataFrame:
+    not_loaded = out.loc[~out["uid"].isin(submission.uid)]
+    print(f"Not loaded: {len(not_loaded)}")
+    full = pd.concat([submission, not_loaded])
+    full = full.sort_values(by=["uid"], ignore_index=True)
+    return full
+
+
 @no_grad()
 def prediction(
     model: Any, dataloader: DataLoader, criterion: Any | None = None
@@ -40,7 +48,7 @@ def prediction(
 
 def main(
     csv_path: str = "splits/downloaded.csv",
-    model_path: str = "new_data_6_channels_norm/model_best.pth",
+    model_path: str = "rexnet_adamw_redefine_scheduler/model_best.pth",
     inference: bool = True,
 ):
     outputs_save_path = (
@@ -49,17 +57,23 @@ def main(
     )
     outputs_save_path.mkdir(parents=True, exist_ok=True)
 
-    model = define_net("resnet18", weights=system_config.model_dir / model_path)
+    model = define_net("rexnet-100", weights=system_config.model_dir / model_path)
     dataloader = create_dataloader(
         system_config.data_dir / "arrays/more_arrays_fixed",
         system_config.data_dir / csv_path,
         inference=inference,
+        save_preprocessed=None,
     )
     phase = Phase.test if inference else Phase.val
     predictions, _ = prediction(model, dataloader[phase])
     predictions.to_csv(
         outputs_save_path / "prediction_validation.csv",
         index=False,
+    )
+
+    out = (
+        system_config.data_dir
+        / "outputs/weighted_sampler_300epoch_lr_0_0005_dumb_split_full_df.csv"
     )
 
     if inference:
@@ -69,8 +83,15 @@ def main(
             outputs_save_path / "submission.csv",
             index=False,
         )
+
+        out = pd.read_csv(out / "submission.csv")
+        full = add_not_loaded(out, submission)
+        full.to_csv(outputs_save_path / "submission_with_not_loaded.csv", index=False)
+
     else:
-        weighted_rmse(predictions)
+        out = pd.read_csv(out / "prediction_validation.csv")
+        full = add_not_loaded(out, predictions)
+        weighted_rmse(full)
 
 
 if __name__ == "__main__":
