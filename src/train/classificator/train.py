@@ -48,22 +48,26 @@ class Trainer:
             test_size=cfg.dataloader.test_size,
             weighted_sampler=cfg.dataloader.weighted_sampler,
             save_preprocessed=cfg.dataloader.save_preprocessed,
+            inpaint=cfg.dataloader.inpaint,
+            hrrr=cfg.net.hrrr,
         )
         self.train_iters = len(self.dataloader[Phase.train])
         self.val_iters = len(self.dataloader[Phase.val])
 
         self.model = define_net(
             model_name=cfg.net.model_name,
-            freeze_grads=cfg.net.freeze_grads,
+            hrrr=cfg.net.hrrr,
             outputs=net_config.outputs,
             pretrained=cfg.net.pretrained,
-            weights=cfg.net.resume_weights,
+            weights_resume=cfg.net.resume_weights,
             new_in_channels=cfg.net.new_in_channels,
         )
 
         self.criterion = DensityMSELoss()
         self.optimizer = define_optimizer(
-            cfg.optimizer.optimizer_name, self.model, cfg.optimizer.lr
+            cfg.optimizer.optimizer_name,
+            self.model,
+            cfg.optimizer.lr,
         )
         self.scheduler = None
         if cfg.scheduler.scheduler_name:
@@ -127,7 +131,10 @@ class Trainer:
             enumerate(self.dataloader[Phase.train]), total=self.train_iters
         ):
             self.optimizer.zero_grad()
-            outputs = self.model(batch["image"].to(torch_config.device))
+            outputs = self.model(
+                batch["image"].to(torch_config.device),
+                batch["hrrr"].to(torch_config.device),
+            )
             loss = self.criterion(outputs, batch["label"].to(torch_config.device))
             running_loss += loss.item()
             loss.backward()

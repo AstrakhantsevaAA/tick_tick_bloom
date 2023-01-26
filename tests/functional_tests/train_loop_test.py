@@ -11,7 +11,7 @@ class TestTrainLoop:
             {
                 "train": {
                     "log_clearml": False,
-                    "epochs": 3,
+                    "epochs": 20,
                     "task_name": "test",
                     "model_save_path": "",
                 },
@@ -19,20 +19,26 @@ class TestTrainLoop:
                     "data_dir": data_dir,
                     "csv_path": csv_path,
                     "augmentations_intensity": 0.5,
-                    "test_size": 10,
-                    "batch_size": 2,
+                    "test_size": 1000,
+                    "batch_size": 8,
                     "weighted_sampler": True,
-                    "save_preprocessed": "",
+                    "save_preprocessed": "/home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/tests/temp",
+                    "hrrr_path": "/home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/hrrr/features/hrrr_features_scaled.csv",
+                    "inpaint": True,
                 },
                 "net": {
                     "resume_weights": "",
                     "freeze_grads": False,
                     "pretrained": False,
-                    "model_name": "resnet18",
+                    "model_name": "resnet-18-hrrr",
                     "new_in_channels": 6,
                 },
-                "optimizer": {"optimizer_name": "adam", "lr": 0.0003},
-                "scheduler": {"scheduler": False, "t0": 1, "t_mult": 2},
+                "optimizer": {"optimizer_name": "adamw", "lr": 0.0003},
+                "scheduler": {
+                    "scheduler_name": "ReduceLROnPlateau",
+                    "t0": 1,
+                    "t_mult": 2,
+                },
             }
         )
         return conf
@@ -43,7 +49,6 @@ class TestTrainLoop:
         loss2 = 10.0
         for i in range(1, 10):
             loss2 = trainer.train_one_epoch(i)
-
         assert loss1 > loss2
 
     def test_deterministic(self, set_conf):

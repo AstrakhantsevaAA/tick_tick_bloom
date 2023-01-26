@@ -34,6 +34,8 @@ def create_dataloader(
     inference: bool = False,
     weighted_sampler: bool = False,
     save_preprocessed: str | Path | None = None,
+    inpaint: bool = False,
+    hrrr: bool = False,
 ) -> DefaultDict[Phase, DataLoader]:
     fix_seeds()
     dataloader = defaultdict()
@@ -58,6 +60,8 @@ def create_dataloader(
             test_size=test_size,
             inference=inference,
             save_preprocessed=save_preprocessed,
+            inpaint=inpaint,
+            hrrr=hrrr,
         )
 
         if phase == Phase.train:
