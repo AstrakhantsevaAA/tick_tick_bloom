@@ -30,10 +30,13 @@ def prediction(
     output = {"uid": [], "pred_raw": [], "pred_int": [], "severity": [], "region": []}
 
     for batch in tqdm(dataloader):
-        logits = model.forward(batch["image"].to(torch_config.device))
+        logits = model.forward(
+            batch["image"].to(torch_config.device),
+            batch["hrrr"].to(torch_config.device),
+        )
         output["uid"].extend(batch["uid"])
         output["pred_raw"].extend(asnumpy(logits).squeeze())
-        output["pred_int"].extend((asnumpy(logits).squeeze()).astype(int))
+        output["pred_int"].extend((asnumpy(logits).squeee()).astype(int))
         output["severity"].extend(asnumpy(batch["severity"]))
         output["region"].extend(batch["region"])
 
@@ -48,7 +51,7 @@ def prediction(
 
 def main(
     csv_path: str = "splits/downloaded.csv",
-    model_path: str = "rexnet_adamw_redefine_scheduler/model_best.pth",
+    model_path: str = "inpaint/model_best.pth",
     inference: bool = True,
 ):
     outputs_save_path = (
@@ -57,12 +60,15 @@ def main(
     )
     outputs_save_path.mkdir(parents=True, exist_ok=True)
 
-    model = define_net("rexnet-100", weights=system_config.model_dir / model_path)
+    model = define_net(
+        "rexnet-100", weights_resume=system_config.model_dir / model_path
+    )
     dataloader = create_dataloader(
         system_config.data_dir / "arrays/more_arrays_fixed",
         system_config.data_dir / csv_path,
         inference=inference,
         save_preprocessed=None,
+        inpaint=True,
     )
     phase = Phase.test if inference else Phase.val
     predictions, _ = prediction(model, dataloader[phase])
