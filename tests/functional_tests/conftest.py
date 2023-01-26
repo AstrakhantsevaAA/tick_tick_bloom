@@ -13,7 +13,7 @@ def data_dir() -> Path:
 
 @pytest.fixture(scope="class")
 def csv_path() -> Path:
-    return system_config.data_dir / "splits/downloaded.csv"
+    return system_config.data_dir / "splits/hrrr_features_forcasted_scaled.csv"
 
 
 @pytest.fixture()
@@ -22,5 +22,7 @@ def dataset(data_dir, csv_path) -> AlgalDataset:
         data_dir,
         csv_path,
         phase="train",
+        inpaint=True,
+        hrrr=True,
     )
     return dataset
