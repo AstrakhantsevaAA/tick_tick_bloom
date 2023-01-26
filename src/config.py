@@ -41,7 +41,7 @@ class Origin(Enum):
 
 
 @dataclass()
-class Statistics:
+class DataConfig:
     mean = {
         Origin.landsat: [
             2.20399932e-01,
@@ -78,9 +78,63 @@ class Statistics:
             8.3464367,
         ],
     }
+    best_features = [
+        "nanmean_7days",
+        "nanstd_7days",
+        "nanmin_7days",
+        "nanmax_7days",
+        "coef_7days",
+        "temp_ge15_7days",
+        "temp_ge20_7days",
+        "temp_ge25_7days",
+        "temp_ge30_7days",
+        "temp_le10_7days",
+        "perc90_7days",
+        "perc10_7days",
+        "nanmean_14days",
+        "nanstd_14days",
+        "nanmin_14days",
+        "nanmax_14days",
+        "coef_14days",
+        "temp_ge15_14days",
+        "temp_ge20_14days",
+        "temp_ge25_14days",
+        "temp_ge30_14days",
+        "temp_le5_14days",
+        "perc90_14days",
+        "perc10_14days",
+        "nanmean_30days",
+        "nanstd_30days",
+        "nanmin_30days",
+        "nanmax_30days",
+        "coef_30days",
+        "temp_ge15_30days",
+        "temp_ge20_30days",
+        "temp_ge25_30days",
+        "temp_ge30_30days",
+        "temp_le10_30days",
+        "temp_le5_30days",
+        "perc90_30days",
+        "perc10_30days",
+        "nanmean_90days",
+        "nanstd_90days",
+        "nanmin_90days",
+        "nanmax_90days",
+        "coef_90days",
+        "temp_ge15_90days",
+        "temp_ge20_90days",
+        "temp_ge25_90days",
+        "temp_ge30_90days",
+        "temp_le10_90days",
+        "temp_le5_90days",
+        "temp_le0_90days",
+        "temp_lem5_90days",
+        "perc90_90days",
+        "perc10_90days",
+    ]
 
 
 system_config = SystemConfig()
 torch_config = TorchConfig()
 net_config = NetConfig()
-statistics = Statistics()
+data_config = DataConfig()
