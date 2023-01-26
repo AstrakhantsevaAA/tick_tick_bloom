@@ -1,26 +1,27 @@
 train:
   log_clearml: True
   epochs: 500
-  task_name: new_data_6_channels_norm
-  model_save_path: new_data_6_channels_norm
+  task_name: hrrr_forcasted_rexnet
+  model_save_path: hrrr_forcasted
 dataloader:
   weighted_sampler: True
   augmentations_intensity: 0.8
   data_dir: /home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/arrays/more_arrays_fixed
-  csv_path: /home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/splits/downloaded.csv
+  csv_path: /home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/hrrr/features/hrrr_features_forcasted_scaled.csv
   test_size: 0
   batch_size: 32
-  save_preprocessed: "/home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/preprocessed/test"
+  save_preprocessed: /home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/preprocessed/inpaint
+  inpaint: True
 net:
   resume_weights: ""
-  freeze_grads: False
+  hrrr: True
   pretrained: True
-  model_name: rexnet-100
+  model_name: rexnet_100
   new_in_channels: 6
 optimizer:
-  optimizer_name: adam
-  lr: 0.0003
+  optimizer_name: adamw
+  lr: 1e-3
 scheduler:
-  scheduler: True
+  scheduler_name: ReduceLROnPlateau
   t0: 1
   t_mult: 2
