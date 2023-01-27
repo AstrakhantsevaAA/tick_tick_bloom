@@ -22,13 +22,6 @@ class TorchConfig:
     print(device)
 
 
-@dataclass
-class NetConfig:
-    outputs = 1
-    in_channels = 6
-    label_column = "density"
-
-
 class Phase(Enum):
     train = "train"
     val = "validation"
@@ -42,11 +35,13 @@ class Origin(Enum):
 
 @dataclass()
 class DataConfig:
+    meta_keys = ["cloud_cover", "sun_azimuth", "sun_elevation"]
     mean = {
         Origin.landsat: [
             2.20399932e-01,
             2.22531944e-01,
             2.13199551e-01,
+            1.26650048e+02,
             1.97883284e-01,
             1.25201139e-01,
             5.79306179e-01,
@@ -55,6 +50,7 @@ class DataConfig:
             0.0230814,
             0.02424073,
             0.02255468,
+            5.20120955,
             0.42252148,
             0.16420172,
             0.47051966,
@@ -65,6 +61,7 @@ class DataConfig:
             0.03625107,
             0.03315592,
             0.0332012,
+            23.70122071,
             0.07700747,
             0.05879639,
             11.76015284,
@@ -73,6 +70,7 @@ class DataConfig:
             0.00969575,
             0.0089022,
             0.00891135,
+            0.84330393,
             0.20993949,
             0.14255269,
             8.3464367,
@@ -136,5 +134,14 @@ class DataConfig:
 
 system_config = SystemConfig()
 torch_config = TorchConfig()
-net_config = NetConfig()
 data_config = DataConfig()
+
+
+@dataclass
+class NetConfig:
+    outputs = 1
+    in_channels = 7 + len(data_config.meta_keys)
+    label_column = "density"
+
+
+net_config = NetConfig()
