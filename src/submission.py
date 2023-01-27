@@ -36,7 +36,7 @@ def prediction(
         )
         output["uid"].extend(batch["uid"])
         output["pred_raw"].extend(asnumpy(logits).squeeze())
-        output["pred_int"].extend((asnumpy(logits).squeee()).astype(int))
+        output["pred_int"].extend((asnumpy(logits).squeeze()).astype(int))
         output["severity"].extend(asnumpy(batch["severity"]))
         output["region"].extend(batch["region"])
 
@@ -50,9 +50,9 @@ def prediction(
 
 
 def main(
-    csv_path: str = "splits/downloaded.csv",
-    model_path: str = "inpaint/model_best.pth",
-    inference: bool = True,
+    csv_path: str = "splits/hrrr_features_forcasted_scaled.csv",
+    model_path: str = "hrrr_forcasted/model_best.pth",
+    inference: bool = False,
 ):
     outputs_save_path = (
         system_config.data_dir
@@ -61,7 +61,10 @@ def main(
     outputs_save_path.mkdir(parents=True, exist_ok=True)
 
     model = define_net(
-        "rexnet-100", weights_resume=system_config.model_dir / model_path
+        "rexnet_100",
+        weights_resume=system_config.model_dir / model_path,
+        hrrr=True,
+        new_in_channels=6,
     )
     dataloader = create_dataloader(
         system_config.data_dir / "arrays/more_arrays_fixed",
@@ -69,6 +72,7 @@ def main(
         inference=inference,
         save_preprocessed=None,
         inpaint=True,
+        hrrr=True,
     )
     phase = Phase.test if inference else Phase.val
     predictions, _ = prediction(model, dataloader[phase])
