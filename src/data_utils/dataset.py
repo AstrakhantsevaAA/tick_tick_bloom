@@ -1,12 +1,9 @@
-from collections import defaultdict
-from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import torch
 from loguru import logger
-from scipy import interpolate
 from torch.utils.data import Dataset
 
 from src.config import Origin, data_config, net_config
@@ -16,59 +13,7 @@ from src.data_utils.transforms import (
     gamma_torch,
     normalize,
 )
-
-
-def array_inpainting(array: np.ndarray) -> np.ndarray:
-    inpainted = deepcopy(array)
-    for channel in range(array.shape[-1]):
-        img = array[..., channel]
-        if np.isnan(img).any() or np.isinf(img).any():
-            valid_mask = ~(np.isnan(img) | np.isinf(img))
-            coords = np.array(np.nonzero(valid_mask)).T
-            values = img[valid_mask]
-            try:
-                it = interpolate.LinearNDInterpolator(coords, values, fill_value=0)
-                filled = it(list(np.ndindex(img.shape))).reshape(img.shape)
-                inpainted[..., channel] = filled
-            except Exception:
-                img[np.isnan(img)] = 0.0
-                img[np.isinf(img)] = 0.0
-                inpainted[..., channel] = img
-
-    return inpainted
-
-
-def read_dataframe(
-    data_dir: Path,
-    csv_path: Path | pd.DataFrame,
-    phase: str | None = None,
-    test_size: int = 0,
-) -> (pd.DataFrame, pd.DataFrame):
-    images = data_dir.rglob("*.npz")
-
-    images_dict = defaultdict()
-    origin = defaultdict()
-    for image in images:
-        filename_info = str(image.stem).split("_")
-        origin[filename_info[0]] = filename_info[1]
-        images_dict[filename_info[0]] = image
-
-    df_full = pd.read_csv(csv_path) if isinstance(csv_path, Path) else csv_path
-    df_split = df_full if phase is None else df_full[df_full["split"] == phase]
-    data = df_split if test_size <= 0 else df_split.iloc[:test_size]
-    try:
-        data["filepath"] = data.loc[:, "uid"].map(images_dict)
-        data["origin"] = data.loc[:, "uid"].map(origin)
-    except KeyError as e:
-        logger.warning(f"Not all data were downloaded:\n{e}")
-        data["filepath"] = data.loc[:, "uid"].apply(
-            lambda x: images_dict[x] if x in images_dict.keys() else None
-        )
-        data["origin"] = data.loc[:, "uid"].apply(
-            lambda x: origin[x] if x in origin.keys() else None
-        )
-
-    return data, df_full
+from src.data_utils import dataset_utils
 
 
 class AlgalDataset(Dataset):
@@ -87,18 +32,20 @@ class AlgalDataset(Dataset):
         save_preprocessed: str | Path | None = None,
         inpaint: bool = False,
         hrrr: bool = False,
+        meta_channels_path: Path | None = None,
     ):
         self.data_dir = data_dir
         self.inference = inference
         self.inpaint = inpaint
         self.hrrr = hrrr
+        self.meta_channels_path = meta_channels_path
 
         self.save_preprocessed = save_preprocessed
         logger.warning(
             f"Preprocessed data will be saved to or read from {self.save_preprocessed}"
         )
 
-        self.data, self.df_full = read_dataframe(data_dir, csv_path, phase, test_size)
+        self.data, self.df_full = dataset_utils.read_dataframe(data_dir, csv_path, phase, test_size)
         self.regions = self.data.loc[:, "region"]
         self.transform = define_transform()
         self.augmentation = None
@@ -150,7 +97,7 @@ class AlgalDataset(Dataset):
                 )
 
             image_orig = array[..., :3]
-            meta_channels = array[..., 4:]
+            meta_channels = array[..., 3:]
 
             image_orig = np.concatenate([image_orig, meta_channels], axis=-1).astype(
                 "float32"
@@ -159,9 +106,12 @@ class AlgalDataset(Dataset):
             if self.inpaint and (
                 np.isnan(image_orig).any() or np.isinf(image_orig).any()
             ):
-                image_orig = array_inpainting(image_orig)
+                image_orig = dataset_utils.array_inpainting(image_orig)
 
             image = normalize(image_orig, mean, std).astype("float32")
+
+            if self.meta_channels_path is not None:
+                image = dataset_utils.add_meta_channels(self.meta_channels_path, image, uid).astype("float32")
 
             label_scaled, label = 0.0, 0.0
             if not self.inference:
@@ -185,11 +135,16 @@ class AlgalDataset(Dataset):
 
         image = self.transform(image=image)["image"]
 
+        if isinstance(label_scaled, np.ndarray):
+            label_scaled = torch.tensor(label_scaled, dtype=torch.float32)
+        else:
+            label_scaled = label_scaled.type('torch.FloatTensor')
+
         sample = {
             "uid": uid,
             "image": image,
             "hrrr": [] if hrrr is None else torch.tensor(hrrr, dtype=torch.float32),
-            "label": torch.tensor(label_scaled, dtype=torch.float32),
+            "label": label_scaled,
             "label_origin": label,
             "filepath": filepath,
             "severity": severity,
