@@ -7,13 +7,13 @@ from loguru import logger
 from torch.utils.data import Dataset
 
 from src.config import Origin, data_config, net_config
+from src.data_utils import dataset_utils
 from src.data_utils.transforms import (
     define_augmentations,
     define_transform,
     gamma_torch,
     normalize,
 )
-from src.data_utils import dataset_utils
 
 
 class AlgalDataset(Dataset):
@@ -45,7 +45,9 @@ class AlgalDataset(Dataset):
             f"Preprocessed data will be saved to or read from {self.save_preprocessed}"
         )
 
-        self.data, self.df_full = dataset_utils.read_dataframe(data_dir, csv_path, phase, test_size)
+        self.data, self.df_full = dataset_utils.read_dataframe(
+            data_dir, csv_path, phase, test_size
+        )
         self.regions = self.data.loc[:, "region"]
         self.transform = define_transform()
         self.augmentation = None
@@ -111,7 +113,9 @@ class AlgalDataset(Dataset):
             image = normalize(image_orig, mean, std).astype("float32")
 
             if self.meta_channels_path is not None:
-                image = dataset_utils.add_meta_channels(self.meta_channels_path, image, uid).astype("float32")
+                image = dataset_utils.add_meta_channels(
+                    self.meta_channels_path, image, uid
+                ).astype("float32")
 
             label_scaled, label = 0.0, 0.0
             if not self.inference:
@@ -138,7 +142,7 @@ class AlgalDataset(Dataset):
         if isinstance(label_scaled, np.ndarray):
             label_scaled = torch.tensor(label_scaled, dtype=torch.float32)
         else:
-            label_scaled = label_scaled.type('torch.FloatTensor')
+            label_scaled = label_scaled.type("torch.FloatTensor")
 
         sample = {
             "uid": uid,

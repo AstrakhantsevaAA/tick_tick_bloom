@@ -1,7 +1,7 @@
+import json
 from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
-import json
 
 import numpy as np
 import pandas as pd
@@ -22,12 +22,16 @@ def add_meta_channels(meta_path: Path, image: np.ndarray, uid: str):
     elif info["l_platform"] is not None:
         prefix = "l"
     else:
-        meta_channels = np.zeros((image.shape[0], image.shape[1], len(data_config.meta_keys)))
+        meta_channels = np.zeros(
+            (image.shape[0], image.shape[1], len(data_config.meta_keys))
+        )
         image = np.concatenate((image, meta_channels), axis=2)
         return image
 
     for key in data_config.meta_keys:
-        meta_channels = np.full((image.shape[0], image.shape[1], 1), info[f"{prefix}_{key}"])
+        meta_channels = np.full(
+            (image.shape[0], image.shape[1], 1), info[f"{prefix}_{key}"]
+        )
         try:
             meta_channels[np.isnan(meta_channels)] = 0.0
             meta_channels[np.isinf(meta_channels)] = 0.0
