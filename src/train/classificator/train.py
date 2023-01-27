@@ -50,6 +50,7 @@ class Trainer:
             save_preprocessed=cfg.dataloader.save_preprocessed,
             inpaint=cfg.dataloader.inpaint,
             hrrr=cfg.net.hrrr,
+            meta_channels_path=Path(cfg.dataloader.meta_channels_path),
         )
         self.train_iters = len(self.dataloader[Phase.train])
         self.val_iters = len(self.dataloader[Phase.val])
@@ -60,7 +61,6 @@ class Trainer:
             outputs=net_config.outputs,
             pretrained=cfg.net.pretrained,
             weights_resume=cfg.net.resume_weights,
-            new_in_channels=cfg.net.new_in_channels,
         )
 
         self.criterion = DensityMSELoss()
