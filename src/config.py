@@ -136,7 +136,7 @@ data_config = DataConfig()
 @dataclass
 class NetConfig:
     outputs = 1
-    in_channels = 7 + len(data_config.meta_keys)
+    in_channels = 6
     label_column = "density"
 
 

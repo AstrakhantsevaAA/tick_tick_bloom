@@ -32,7 +32,7 @@ class AlgalDataset(Dataset):
         save_preprocessed: str | Path | None = None,
         inpaint: bool = False,
         hrrr: bool = False,
-        meta_channels_path: Path | None = None,
+        meta_channels_path: Path | str | None = None,
     ):
         self.data_dir = data_dir
         self.inference = inference
@@ -114,7 +114,7 @@ class AlgalDataset(Dataset):
 
             if self.meta_channels_path is not None:
                 image = dataset_utils.add_meta_channels(
-                    self.meta_channels_path, image, uid
+                    Path(self.meta_channels_path), image, uid
                 ).astype("float32")
 
             label_scaled, label = 0.0, 0.0

@@ -36,7 +36,7 @@ def create_dataloader(
     save_preprocessed: str | Path | None = None,
     inpaint: bool = False,
     hrrr: bool = False,
-    meta_channels_path: Path | None = None,
+    meta_channels_path: Path | str | None = None,
 ) -> DefaultDict[Phase, DataLoader]:
     fix_seeds()
     dataloader = defaultdict()

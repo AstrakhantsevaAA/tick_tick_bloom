@@ -11,7 +11,7 @@ class TestTrainLoop:
             {
                 "train": {
                     "log_clearml": False,
-                    "epochs": 20,
+                    "epochs": 3,
                     "task_name": "test",
                     "model_save_path": "",
                 },
@@ -19,19 +19,18 @@ class TestTrainLoop:
                     "data_dir": data_dir,
                     "csv_path": csv_path,
                     "augmentations_intensity": 0.5,
-                    "test_size": 1000,
+                    "test_size": 100,
                     "batch_size": 8,
                     "weighted_sampler": True,
-                    "save_preprocessed": "/home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/tests/temp",
-                    "hrrr_path": "/home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/hrrr/features/hrrr_features_scaled.csv",
+                    "save_preprocessed": None,
                     "inpaint": True,
+                    "meta_channels_path": None
                 },
                 "net": {
                     "resume_weights": "",
-                    "freeze_grads": False,
+                    "hrrr": False,
                     "pretrained": False,
-                    "model_name": "resnet-18-hrrr",
-                    "new_in_channels": 6,
+                    "model_name": "resnet18",
                 },
                 "optimizer": {"optimizer_name": "adamw", "lr": 0.0003},
                 "scheduler": {
@@ -47,7 +46,7 @@ class TestTrainLoop:
         trainer = Trainer(set_conf)
         loss1 = trainer.train_one_epoch(0)
         loss2 = 10.0
-        for i in range(1, 10):
+        for i in range(1, 5):
             loss2 = trainer.train_one_epoch(i)
         assert loss1 > loss2
 

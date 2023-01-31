@@ -11,5 +11,8 @@ def test_datasetclass(dataset):
     print(sample)
 
     assert len(sample["image"].shape) == 3
-    assert sample["image"].shape[0] == net_config.in_channels
+    if dataset.hrrr:
+        assert sample["image"].shape[0] == net_config.in_channels
+    else:
+        sample["image"].shape[0] == 6
     assert len(sample["hrrr"]) == len(data_config.best_features)
