@@ -12,7 +12,10 @@ def set_new_in_channels(model, new_in_channels: int, pretrained: bool = False):
     try:
         layer = model.cnn.stem.conv
     except AttributeError:
-        layer = model.cnn.conv1
+        try:
+            layer = model.cnn.conv1
+        except AttributeError:
+            layer = model.stem.conv
 
     new_layer = nn.Conv2d(
         in_channels=new_in_channels,
@@ -39,7 +42,10 @@ def set_new_in_channels(model, new_in_channels: int, pretrained: bool = False):
     try:
         model.cnn.stem.conv = new_layer
     except AttributeError:
-        model.cnn.conv1 = new_layer
+        try:
+            model.cnn.conv1 = new_layer
+        except:
+            model.stem.conv = new_layer
 
     return model
 
@@ -55,10 +61,16 @@ def parse_model_name(
         if hrrr:
             model = HrrrNet(feature_extractor=model, outputs=outputs)
         else:
-            model.cnn.head.fc = nn.Linear(
-                in_features=model.head.fc.in_features,
-                out_features=outputs,
-            )
+            try:
+                model.cnn.head.fc = nn.Linear(
+                    in_features=model.cnn.head.fc.in_features,
+                    out_features=outputs,
+                )
+            except:
+                model.head.fc = nn.Linear(
+                    in_features=model.head.fc.in_features,
+                    out_features=outputs,
+                )
         return model
     except Exception:
         raise Exception(

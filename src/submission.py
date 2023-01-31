@@ -30,10 +30,15 @@ def prediction(
     output = {"uid": [], "pred_raw": [], "pred_int": [], "severity": [], "region": []}
 
     for batch in tqdm(dataloader):
-        logits = model.forward(
-            batch["image"].to(torch_config.device),
-            batch["hrrr"].to(torch_config.device),
-        )
+        if batch.get("hrrr"):
+            logits = model.forward(
+                batch["image"].to(torch_config.device),
+                batch["hrrr"].to(torch_config.device),
+            )
+        else:
+            logits = model.forward(
+                batch["image"].to(torch_config.device)
+            )
         output["uid"].extend(batch["uid"])
         output["pred_raw"].extend(asnumpy(logits).squeeze())
         output["pred_int"].extend((asnumpy(logits).squeeze()).clip(1, None).astype(int))
@@ -50,9 +55,9 @@ def prediction(
 
 
 def main(
-    csv_path: str = "splits/hrrr_features_forcasted_scaled.csv",
-    model_path: str = "hrrr_forcasted/model_best.pth",
-    inference: bool = False,
+    csv_path: str = "splits/downloaded.csv",
+    model_path: str = "new_data_6_channels_norm/model_best.pth",
+    inference: bool = True,
 ):
     outputs_save_path = (
         system_config.data_dir
@@ -63,7 +68,7 @@ def main(
     model = define_net(
         "rexnet_100",
         weights_resume=system_config.model_dir / model_path,
-        hrrr=True,
+        hrrr=False,
         new_in_channels=6,
     )
     dataloader = create_dataloader(
@@ -72,14 +77,11 @@ def main(
         inference=inference,
         save_preprocessed=None,
         inpaint=True,
-        hrrr=True,
+        hrrr=False,
+        meta_channels_path=None,
     )
     phase = Phase.test if inference else Phase.val
     predictions, _ = prediction(model, dataloader[phase])
-    predictions.to_csv(
-        outputs_save_path / "prediction_validation.csv",
-        index=False,
-    )
 
     out = (
         system_config.data_dir
@@ -99,6 +101,10 @@ def main(
         full.to_csv(outputs_save_path / "submission_with_not_loaded.csv", index=False)
 
     else:
+        predictions.to_csv(
+            outputs_save_path / "prediction_validation.csv",
+            index=False,
+        )
         out = pd.read_csv(out / "prediction_validation.csv")
         full = add_not_loaded(out, predictions)
         weighted_rmse(full)

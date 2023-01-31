@@ -99,7 +99,7 @@ class AlgalDataset(Dataset):
                 )
 
             image_orig = array[..., :3]
-            meta_channels = array[..., 3:]
+            meta_channels = array[..., 4:]
 
             image_orig = np.concatenate([image_orig, meta_channels], axis=-1).astype(
                 "float32"
@@ -139,7 +139,7 @@ class AlgalDataset(Dataset):
 
         image = self.transform(image=image)["image"]
 
-        if isinstance(label_scaled, np.ndarray):
+        if isinstance(label_scaled, (np.ndarray, float)):
             label_scaled = torch.tensor(label_scaled, dtype=torch.float32)
         else:
             label_scaled = label_scaled.type("torch.FloatTensor")
