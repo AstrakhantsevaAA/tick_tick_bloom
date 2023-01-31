@@ -36,7 +36,7 @@ def prediction(
         )
         output["uid"].extend(batch["uid"])
         output["pred_raw"].extend(asnumpy(logits).squeeze())
-        output["pred_int"].extend((asnumpy(logits).squeeze()).astype(int))
+        output["pred_int"].extend((asnumpy(logits).squeeze()).clip(1, None).astype(int))
         output["severity"].extend(asnumpy(batch["severity"]))
         output["region"].extend(batch["region"])
 
