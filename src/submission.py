@@ -93,6 +93,7 @@ def main(
 
         out = pd.read_csv(out / "united_lightgbm1_and_best_net.csv")
         full = add_not_loaded(out, submission)
+        print(f"Submission saved to: {outputs_save_path}")
         full.to_csv(outputs_save_path / "submission_with_not_loaded.csv", index=False)
 
     else:
