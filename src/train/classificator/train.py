@@ -56,7 +56,7 @@ class Trainer:
         self.val_iters = len(self.dataloader[Phase.val])
 
         in_channels = net_config.in_channels
-        if cfg.net.hrrr:
+        if cfg.dataloader.meta_channels_path:
             in_channels += len(data_config.meta_keys)
 
         self.model = define_net(
@@ -136,7 +136,7 @@ class Trainer:
             enumerate(self.dataloader[Phase.train]), total=self.train_iters
         ):
             self.optimizer.zero_grad()
-            if batch.get("hrrr"):
+            if not isinstance(batch.get("hrrr"), list):
                 outputs = self.model(
                     batch["image"].to(torch_config.device),
                     batch["hrrr"].to(torch_config.device),

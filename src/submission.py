@@ -30,7 +30,7 @@ def prediction(
     output = {"uid": [], "pred_raw": [], "pred_int": [], "severity": [], "region": []}
 
     for batch in tqdm(dataloader):
-        if batch.get("hrrr"):
+        if not isinstance(batch.get("hrrr"), list):
             logits = model.forward(
                 batch["image"].to(torch_config.device),
                 batch["hrrr"].to(torch_config.device),
@@ -55,8 +55,8 @@ def prediction(
 
 
 def main(
-    csv_path: str = "splits/downloaded.csv",
-    model_path: str = "new_data_6_channels_norm/model_best.pth",
+    csv_path: str = "splits/hrrr_features_forcasted_scaled.csv",
+    model_path: str = "scl_channels/model_best.pth",
     inference: bool = True,
 ):
     outputs_save_path = (
@@ -68,8 +68,8 @@ def main(
     model = define_net(
         "rexnet_100",
         weights_resume=system_config.model_dir / model_path,
-        hrrr=False,
-        new_in_channels=6,
+        hrrr=True,
+        new_in_channels=8,
     )
     dataloader = create_dataloader(
         system_config.data_dir / "arrays/more_arrays_fixed",
@@ -77,7 +77,7 @@ def main(
         inference=inference,
         save_preprocessed=None,
         inpaint=True,
-        hrrr=False,
+        hrrr=True,
         meta_channels_path=None,
     )
     phase = Phase.test if inference else Phase.val
@@ -85,7 +85,7 @@ def main(
 
     out = (
         system_config.data_dir
-        / "outputs/weighted_sampler_300epoch_lr_0_0005_dumb_split_full_df.csv"
+        / "outputs"
     )
 
     if inference:
@@ -96,7 +96,7 @@ def main(
             index=False,
         )
 
-        out = pd.read_csv(out / "submission.csv")
+        out = pd.read_csv(out / "united_lightgbm1_and_best_net.csv")
         full = add_not_loaded(out, submission)
         full.to_csv(outputs_save_path / "submission_with_not_loaded.csv", index=False)
 
