@@ -8,7 +8,7 @@ from loguru import logger
 from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 
-from src.config import Phase, net_config, system_config, torch_config, data_config
+from src.config import Phase, data_config, net_config, system_config, torch_config
 from src.metrics import weighted_rmse
 from src.nets.define_net import define_net
 from src.submission import prediction
@@ -65,7 +65,7 @@ class Trainer:
             outputs=net_config.outputs,
             pretrained=cfg.net.pretrained,
             weights_resume=cfg.net.resume_weights,
-            new_in_channels=in_channels
+            new_in_channels=in_channels,
         )
 
         self.criterion = DensityMSELoss()
@@ -142,9 +142,7 @@ class Trainer:
                     batch["hrrr"].to(torch_config.device),
                 )
             else:
-                outputs = self.model(
-                    batch["image"].to(torch_config.device)
-                )
+                outputs = self.model(batch["image"].to(torch_config.device))
             loss = self.criterion(outputs, batch["label"].to(torch_config.device))
             running_loss += loss.item()
             loss.backward()

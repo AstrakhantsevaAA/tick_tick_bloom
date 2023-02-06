@@ -36,9 +36,7 @@ def prediction(
                 batch["hrrr"].to(torch_config.device),
             )
         else:
-            logits = model.forward(
-                batch["image"].to(torch_config.device)
-            )
+            logits = model.forward(batch["image"].to(torch_config.device))
         output["uid"].extend(batch["uid"])
         output["pred_raw"].extend(asnumpy(logits).squeeze())
         output["pred_int"].extend((asnumpy(logits).squeeze()).clip(1, None).astype(int))
@@ -83,10 +81,7 @@ def main(
     phase = Phase.test if inference else Phase.val
     predictions, _ = prediction(model, dataloader[phase])
 
-    out = (
-        system_config.data_dir
-        / "outputs"
-    )
+    out = system_config.data_dir / "outputs"
 
     if inference:
         submission = predictions.loc[:, ["uid", "region", "pred_int"]]

@@ -98,9 +98,7 @@ class AlgalDataset(Dataset):
                     f"image is None, got filepath: {filepath} \n data: {self.data}"
                 )
 
-            if self.inpaint and (
-                np.isnan(array).any() or np.isinf(array).any()
-            ):
+            if self.inpaint and (np.isnan(array).any() or np.isinf(array).any()):
                 array = dataset_utils.array_inpainting(array)
 
             image = normalize(array, mean, std).astype("float32")
@@ -108,17 +106,15 @@ class AlgalDataset(Dataset):
             image_orig = image[..., :3]
             meta_channels = image[..., 4:]
             scl = image[..., 3]
-            scl_channels = np.zeros(
-                (image.shape[0], image.shape[1], 2)
-            )
+            scl_channels = np.zeros((image.shape[0], image.shape[1], 2))
             if origin == Origin.sentinel:
                 scl_channels[..., 0] = scl
             else:
                 scl_channels[..., 1] = scl
 
-            image = np.concatenate([image_orig, meta_channels, scl_channels], axis=-1).astype(
-                "float32"
-            )
+            image = np.concatenate(
+                [image_orig, meta_channels, scl_channels], axis=-1
+            ).astype("float32")
 
             if self.meta_channels_path is not None:
                 image = dataset_utils.add_meta_channels(
