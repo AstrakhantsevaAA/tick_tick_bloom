@@ -1,16 +1,16 @@
 train:
   log_clearml: True
   epochs: 500
-  task_name: scl_channels_meta
-  model_save_path: scl_channels_meta
+  task_name: scl_ohe
+  model_save_path: scl_ohe
 dataloader:
   weighted_sampler: True
-  augmentations_intensity: 0.5
+  augmentations_intensity: 0.8
   data_dir: /home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/arrays/more_arrays_fixed
   csv_path: /home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/splits/hrrr_features_forcasted_scaled.csv
   test_size: 0
   batch_size: 32
-  save_preprocessed: /home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/preprocessed/scl_channels_meta_fixed
+  save_preprocessed: /home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/preprocessed/scl_ohe
   inpaint: True
   meta_channels_path: /home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/metadata/more_metadata_fixed
 net:

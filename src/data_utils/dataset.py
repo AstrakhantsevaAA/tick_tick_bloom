@@ -95,20 +95,17 @@ class AlgalDataset(Dataset):
             mean = data_config.mean[Origin[origin]]
             std = data_config.std[Origin[origin]]
 
-            image = normalize(array, mean, std).astype("float32")
+            image_orig = array[..., :3]
+            meta_channels = array[..., 4:]
+            scl = array[..., 3]
 
-            image_orig = image[..., :3]
-            meta_channels = image[..., 4:]
-            scl = image[..., 3]
-            scl_channels = np.zeros((image.shape[0], image.shape[1], 2))
-            if origin == Origin.sentinel:
-                scl_channels[..., 0] = scl
-            else:
-                scl_channels[..., 1] = scl
+            scl_preprocessed = dataset_utils.one_hot_encoder(scl, Origin[origin])
 
             image = np.concatenate(
-                [image_orig, meta_channels, scl_channels], axis=-1
+                [image_orig, meta_channels], axis=-1
             ).astype("float32")
+
+            image = normalize(image, mean, std).astype("float32")
 
             hrrr = None
             if self.hrrr:
@@ -118,11 +115,13 @@ class AlgalDataset(Dataset):
                 else:
                     logger.error("hrrr is empty!")
 
-            meta = None
             if self.meta_channels_path is not None:
                 meta = dataset_utils.prepare_meta_channels(
                     Path(self.meta_channels_path), uid
                 ).astype("float32")
+                meta = np.concatenate([meta, scl_preprocessed], axis=0)
+            else:
+                meta = scl_preprocessed
 
             label_scaled, label = 0.0, 0.0
             if not self.inference:

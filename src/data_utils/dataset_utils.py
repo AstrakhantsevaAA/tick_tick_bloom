@@ -8,7 +8,28 @@ import pandas as pd
 from loguru import logger
 from scipy import interpolate
 
-from src.config import data_config
+from src.config import data_config, Origin
+
+
+scl_map = {0.: 0, 64.: 10, 128.: 8, 192.: 9}
+
+
+def one_hot_encoder(scl_raw: np.ndarray, origin: Origin, shape: tuple = (data_config.num_scl_classes, 112, 112),) -> np.ndarray:
+    # scl_raw shape: H x W
+    # shape: num scl classes x H x W
+    # scl_processed: num scl classes x H x W
+    scl_processed = np.zeros(shape)
+    classes = np.unique(scl_raw)
+
+    if origin == Origin.landsat:
+        classes = [scl_map[c] for c in classes]
+
+    for i in classes:
+        if np.isnan(i) or np.isinf(i):
+            continue
+        scl_processed[int(i), ...] = 1.
+
+    return scl_processed
 
 
 def prepare_meta_channels(
