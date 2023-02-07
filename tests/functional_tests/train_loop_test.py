@@ -19,18 +19,25 @@ class TestTrainLoop:
                     "data_dir": data_dir,
                     "csv_path": csv_path,
                     "augmentations_intensity": 0.5,
-                    "test_size": 10,
-                    "batch_size": 2,
+                    "test_size": 100,
+                    "batch_size": 8,
                     "weighted_sampler": True,
+                    "save_preprocessed": None,
+                    "inpaint": True,
+                    "meta_channels_path": None
                 },
                 "net": {
                     "resume_weights": "",
-                    "freeze_grads": False,
+                    "hrrr": False,
                     "pretrained": False,
                     "model_name": "resnet18",
                 },
-                "optimizer": {"optimizer_name": "adam", "lr": 0.0003},
-                "scheduler": {"scheduler": False, "t0": 1, "t_mult": 2},
+                "optimizer": {"optimizer_name": "adamw", "lr": 0.0003},
+                "scheduler": {
+                    "scheduler_name": "ReduceLROnPlateau",
+                    "t0": 1,
+                    "t_mult": 2,
+                },
             }
         )
         return conf
@@ -39,9 +46,8 @@ class TestTrainLoop:
         trainer = Trainer(set_conf)
         loss1 = trainer.train_one_epoch(0)
         loss2 = 10.0
-        for i in range(1, 10):
+        for i in range(1, 5):
             loss2 = trainer.train_one_epoch(i)
-
         assert loss1 > loss2
 
     def test_deterministic(self, set_conf):

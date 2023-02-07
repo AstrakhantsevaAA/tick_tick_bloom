@@ -8,10 +8,11 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.optim as optim
+from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, ReduceLROnPlateau
 from torch.utils.data import DataLoader
 
-from data_utils.dataset import AlgalDataset
 from src.config import Phase, system_config
+from src.data_utils.dataset import AlgalDataset
 from src.train.classificator.sampler import define_sampler
 
 
@@ -32,6 +33,10 @@ def create_dataloader(
     test_size: int = 0,
     inference: bool = False,
     weighted_sampler: bool = False,
+    save_preprocessed: str | Path | None = None,
+    inpaint: bool = False,
+    hrrr: bool = False,
+    meta_channels_path: Path | str | None = None,
 ) -> DefaultDict[Phase, DataLoader]:
     fix_seeds()
     dataloader = defaultdict()
@@ -55,6 +60,10 @@ def create_dataloader(
             augmentations_intensity=augmentations_intensity,
             test_size=test_size,
             inference=inference,
+            save_preprocessed=save_preprocessed,
+            inpaint=inpaint,
+            hrrr=hrrr,
+            meta_channels_path=meta_channels_path,
         )
 
         if phase == Phase.train:
@@ -76,10 +85,22 @@ def define_optimizer(optimizer_name: str, model, lr: float = 4e-3) -> Any:
     elif optimizer_name == "radam":
         optimizer = optim.RAdam(model.parameters(), lr=lr)
     elif optimizer_name == "adamw":
-        optimizer = optim.AdamW(model.parameters(), lr=lr, eps=1e-8, weight_decay=0.05)
+        optimizer = optim.AdamW(model.parameters(), lr=lr, eps=1e-8, weight_decay=1e-2)
     else:
         raise Exception(
             f"Wrong optimizer name! Expected 'sgd' or 'adam', got {optimizer_name}"
         )
 
     return optimizer
+
+
+def define_scheduler(optimizer: Any, params: dict):
+    if params["scheduler_name"] == "CosineAnnealingWarmRestarts":
+        return CosineAnnealingWarmRestarts(
+            optimizer,
+            T_0=params["t0"],
+            T_mult=params["t_mult"],
+            eta_min=0.000001,
+        )
+    elif params["scheduler_name"] == "ReduceLROnPlateau":
+        return ReduceLROnPlateau(optimizer, factor=0.5, patience=10, min_lr=0.000001)

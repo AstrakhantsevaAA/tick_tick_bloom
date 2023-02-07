@@ -1,24 +1,27 @@
 train:
   log_clearml: True
   epochs: 500
-  task_name: weighted_sampler_adam
-  model_save_path: weighted_sampler_adam
+  task_name: hrrr_forcasted_meta_scl
+  model_save_path: hrrr_forcasted_meta_scl
 dataloader:
   weighted_sampler: True
   augmentations_intensity: 0.8
-  data_dir: /home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/benchmark/image_arrays
-  csv_path: /home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/splits/balanced_validation/dumb_split_full_df.csv
+  data_dir: /home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/arrays/more_arrays_fixed
+  csv_path: /home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/hrrr/features/hrrr_features_forcasted_scaled.csv
   test_size: 0
   batch_size: 32
+  save_preprocessed: /home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/preprocessed/inpaint_meta_scl
+  inpaint: True
+  meta_channels_path: /home/alenaastrakhantseva/PycharmProjects/tick_tick_bloom/data/metadata/more_metadata_fixed
 net:
   resume_weights: ""
-  freeze_grads: False
+  hrrr: True
   pretrained: True
-  model_name: resnet18
+  model_name: rexnet_100
 optimizer:
-  optimizer_name: adam
-  lr: 0.001
+  optimizer_name: adamw
+  lr: 1e-3
 scheduler:
-  scheduler: True
+  scheduler_name: ReduceLROnPlateau
   t0: 1
   t_mult: 2

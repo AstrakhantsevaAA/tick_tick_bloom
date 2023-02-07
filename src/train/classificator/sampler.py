@@ -23,11 +23,11 @@ def define_sampler(dataset: AlgalDataset) -> WeightedRandomSampler:
     weights_val = calculate_weights(df_val)
     weights_test = calculate_weights(df_test)
 
-    weights_adv = {k: v / weights_val[k] for k, v in weights_train.items()}
+    weights_adv = {k: v / weights_test[k] for k, v in weights_train.items()}
     logger.info(f"Adversarial weights: {weights_adv}")
 
     sampler = WeightedRandomSampler(
-        [weights_test[x] for x in dataset.regions],
+        [weights_adv[x] for x in dataset.regions],
         len(dataset.regions),
     )
 
