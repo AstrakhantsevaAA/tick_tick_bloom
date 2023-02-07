@@ -30,16 +30,22 @@ def prediction(
     output = {"uid": [], "pred_raw": [], "pred_int": [], "severity": [], "region": []}
 
     for batch in tqdm(dataloader):
-        if not isinstance(batch.get("hrrr"), list):
-            logits = model.forward(
+        if len(batch.get("hrrr")) > 0:
+            meta = (
+                batch["meta"].to(torch_config.device)
+                if len(batch.get("meta")) > 0
+                else None
+            )
+            logits = model(
                 batch["image"].to(torch_config.device),
                 batch["hrrr"].to(torch_config.device),
+                meta,
             )
         else:
-            logits = model.forward(batch["image"].to(torch_config.device))
+            logits = model(batch["image"].to(torch_config.device))
         output["uid"].extend(batch["uid"])
         output["pred_raw"].extend(asnumpy(logits).squeeze())
-        output["pred_int"].extend((asnumpy(logits).squeeze()).clip(1, None).astype(int))
+        output["pred_int"].extend((asnumpy(logits).squeeze()).clip(1, 5).astype(int))
         output["severity"].extend(asnumpy(batch["severity"]))
         output["region"].extend(batch["region"])
 

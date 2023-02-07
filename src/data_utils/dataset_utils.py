@@ -11,35 +11,32 @@ from scipy import interpolate
 from src.config import data_config
 
 
-def add_meta_channels(meta_path: Path, image: np.ndarray, uid: str):
-    # image shape: H x W x C
+def prepare_meta_channels(
+    meta_path: Path, uid: str, shape: tuple = (112, 112)
+) -> np.ndarray:
+    # meta channels shape -> num_meta_features, H, W,
     meta_full_path = meta_path / f"{uid}_metadata.json"
     with open(meta_full_path) as f:
         info = json.load(f)
+
+    meta_channels = np.zeros((len(data_config.meta_keys), *shape))
 
     if info["s_platform"] is not None:
         prefix = "s"
     elif info["l_platform"] is not None:
         prefix = "l"
     else:
-        meta_channels = np.zeros(
-            (image.shape[0], image.shape[1], len(data_config.meta_keys))
-        )
-        image = np.concatenate((image, meta_channels), axis=2)
-        return image
+        return meta_channels
 
-    for key in data_config.meta_keys:
-        meta_channels = np.full(
-            (image.shape[0], image.shape[1], 1), info[f"{prefix}_{key}"]
-        )
-        try:
-            meta_channels[np.isnan(meta_channels)] = 0.0
-            meta_channels[np.isinf(meta_channels)] = 0.0
-        except:
-            return meta_channels
-        image = np.concatenate((image, meta_channels), axis=2)
+    for i, key in enumerate(data_config.meta_keys):
+        meta_channels[i, ...] = np.full(shape, info[f"{prefix}_{key}"])
+    try:
+        meta_channels[np.isnan(meta_channels)] = 0.0
+        meta_channels[np.isinf(meta_channels)] = 0.0
+    except:
+        return meta_channels
 
-    return image
+    return meta_channels
 
 
 def array_inpainting(array: np.ndarray) -> np.ndarray:

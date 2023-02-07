@@ -64,17 +64,6 @@ class AlgalDataset(Dataset):
         self.inference = True if split == "test" else self.inference
         severity = int(row["severity"]) if not self.inference else 0
 
-        hrrr = None
-        if self.hrrr:
-            hrrr = row[data_config.best_features]
-            if not hrrr.empty:
-                hrrr = hrrr.to_list()
-            else:
-                logger.error("hrrr is empty!")
-
-        mean = data_config.mean[Origin[origin]]
-        std = data_config.std[Origin[origin]]
-
         save_preprocessed = (
             f"{str(self.save_preprocessed)}/{uid}.npy"
             if self.save_preprocessed is not None
@@ -86,6 +75,8 @@ class AlgalDataset(Dataset):
                 image = np.load(f)
                 label_scaled = np.load(f)
                 label = np.load(f)
+                hrrr = np.load(f)
+                meta = np.load(f)
 
             image = image.astype("float32")
             label_scaled = label_scaled.astype("float32")
@@ -100,6 +91,9 @@ class AlgalDataset(Dataset):
 
             if self.inpaint and (np.isnan(array).any() or np.isinf(array).any()):
                 array = dataset_utils.array_inpainting(array)
+
+            mean = data_config.mean[Origin[origin]]
+            std = data_config.std[Origin[origin]]
 
             image = normalize(array, mean, std).astype("float32")
 
@@ -116,9 +110,18 @@ class AlgalDataset(Dataset):
                 [image_orig, meta_channels, scl_channels], axis=-1
             ).astype("float32")
 
+            hrrr = None
+            if self.hrrr:
+                hrrr = row[data_config.best_features]
+                if not hrrr.empty:
+                    hrrr = hrrr.to_list()
+                else:
+                    logger.error("hrrr is empty!")
+
+            meta = None
             if self.meta_channels_path is not None:
-                image = dataset_utils.add_meta_channels(
-                    Path(self.meta_channels_path), image, uid
+                meta = dataset_utils.prepare_meta_channels(
+                    Path(self.meta_channels_path), uid
                 ).astype("float32")
 
             label_scaled, label = 0.0, 0.0
@@ -137,6 +140,8 @@ class AlgalDataset(Dataset):
                     np.save(f, image)
                     np.save(f, label_scaled)
                     np.save(f, label)
+                    np.save(f, hrrr)
+                    np.save(f, meta)
 
         if self.augmentation is not None:
             image = self.augmentation(image=image)["image"]
@@ -152,6 +157,7 @@ class AlgalDataset(Dataset):
             "uid": uid,
             "image": image,
             "hrrr": [] if hrrr is None else torch.tensor(hrrr, dtype=torch.float32),
+            "meta": [] if meta is None else torch.tensor(meta, dtype=torch.float32),
             "label": label_scaled,
             "label_origin": label,
             "filepath": filepath,
