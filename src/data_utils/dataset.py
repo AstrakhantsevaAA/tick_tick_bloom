@@ -101,9 +101,9 @@ class AlgalDataset(Dataset):
 
             scl_preprocessed = dataset_utils.one_hot_encoder(scl, Origin[origin])
 
-            image = np.concatenate(
-                [image_orig, meta_channels], axis=-1
-            ).astype("float32")
+            image = np.concatenate([image_orig, meta_channels], axis=-1).astype(
+                "float32"
+            )
 
             image = normalize(image, mean, std).astype("float32")
 

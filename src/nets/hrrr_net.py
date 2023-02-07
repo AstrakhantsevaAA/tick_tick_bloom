@@ -12,7 +12,9 @@ class HrrrNet(nn.Module):
         if meta:
             layer = self.cnn.features[0].conv_dw.conv
             self.cnn.features[0].conv_dw.conv = nn.Conv2d(
-                in_channels=layer.in_channels + len(data_config.meta_keys) + data_config.num_scl_classes,
+                in_channels=layer.in_channels
+                + len(data_config.meta_keys)
+                + data_config.num_scl_classes,
                 out_channels=layer.out_channels,
                 kernel_size=layer.kernel_size,
                 stride=layer.stride,
