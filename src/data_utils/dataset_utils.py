@@ -8,38 +8,59 @@ import pandas as pd
 from loguru import logger
 from scipy import interpolate
 
-from src.config import data_config
+from src.config import Origin, data_config
+
+scl_map = {0.0: 0, 64.0: 10, 128.0: 8, 192.0: 9}
 
 
-def add_meta_channels(meta_path: Path, image: np.ndarray, uid: str):
-    # image shape: H x W x C
+def one_hot_encoder(
+    scl_raw: np.ndarray,
+    origin: Origin,
+    shape: tuple = (data_config.num_scl_classes, 112, 112),
+) -> np.ndarray:
+    # scl_raw shape: H x W
+    # shape: num scl classes x H x W
+    # scl_processed: num scl classes x H x W
+    scl_processed = np.zeros(shape)
+    classes = np.unique(scl_raw)
+
+    if origin == Origin.landsat:
+        classes = [scl_map[c] for c in classes]
+
+    for i in classes:
+        if np.isnan(i) or np.isinf(i):
+            continue
+        scl_processed[int(i), ...] = 1.0
+
+    return scl_processed
+
+
+def prepare_meta_channels(
+    meta_path: Path, uid: str, shape: tuple = (112, 112)
+) -> np.ndarray:
+    # meta channels shape -> num_meta_features, H, W,
     meta_full_path = meta_path / f"{uid}_metadata.json"
     with open(meta_full_path) as f:
         info = json.load(f)
+
+    meta_channels = np.zeros((len(data_config.meta_keys), *shape))
 
     if info["s_platform"] is not None:
         prefix = "s"
     elif info["l_platform"] is not None:
         prefix = "l"
     else:
-        meta_channels = np.zeros(
-            (image.shape[0], image.shape[1], len(data_config.meta_keys))
-        )
-        image = np.concatenate((image, meta_channels), axis=2)
-        return image
+        return meta_channels
 
-    for key in data_config.meta_keys:
-        meta_channels = np.full(
-            (image.shape[0], image.shape[1], 1), info[f"{prefix}_{key}"]
-        )
-        try:
-            meta_channels[np.isnan(meta_channels)] = 0.0
-            meta_channels[np.isinf(meta_channels)] = 0.0
-        except:
-            return meta_channels
-        image = np.concatenate((image, meta_channels), axis=2)
+    for i, key in enumerate(data_config.meta_keys):
+        meta_channels[i, ...] = np.full(shape, info[f"{prefix}_{key}"])
+    try:
+        meta_channels[np.isnan(meta_channels)] = 0.0
+        meta_channels[np.isinf(meta_channels)] = 0.0
+    except:
+        return meta_channels
 
-    return image
+    return meta_channels
 
 
 def array_inpainting(array: np.ndarray) -> np.ndarray:

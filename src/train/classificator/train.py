@@ -8,7 +8,7 @@ from loguru import logger
 from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 
-from src.config import Phase, net_config, system_config, torch_config, data_config
+from src.config import Phase, net_config, system_config, torch_config
 from src.metrics import weighted_rmse
 from src.nets.define_net import define_net
 from src.submission import prediction
@@ -55,17 +55,14 @@ class Trainer:
         self.train_iters = len(self.dataloader[Phase.train])
         self.val_iters = len(self.dataloader[Phase.val])
 
-        in_channels = net_config.in_channels
-        if cfg.net.hrrr:
-            in_channels += len(data_config.meta_keys)
-
         self.model = define_net(
             model_name=cfg.net.model_name,
             hrrr=cfg.net.hrrr,
             outputs=net_config.outputs,
             pretrained=cfg.net.pretrained,
             weights_resume=cfg.net.resume_weights,
-            new_in_channels=in_channels
+            new_in_channels=net_config.in_channels,
+            meta=cfg.dataloader.meta_channels_path is not None,
         )
 
         self.criterion = DensityMSELoss()
@@ -136,15 +133,19 @@ class Trainer:
             enumerate(self.dataloader[Phase.train]), total=self.train_iters
         ):
             self.optimizer.zero_grad()
-            if batch.get("hrrr"):
+            if len(batch.get("hrrr")) > 0:
+                meta = (
+                    batch["meta"].to(torch_config.device)
+                    if len(batch.get("meta")) > 0
+                    else None
+                )
                 outputs = self.model(
                     batch["image"].to(torch_config.device),
                     batch["hrrr"].to(torch_config.device),
+                    meta,
                 )
             else:
-                outputs = self.model(
-                    batch["image"].to(torch_config.device)
-                )
+                outputs = self.model(batch["image"].to(torch_config.device))
             loss = self.criterion(outputs, batch["label"].to(torch_config.device))
             running_loss += loss.item()
             loss.backward()

@@ -56,7 +56,11 @@ def set_new_in_channels(model, new_in_channels: int, pretrained: bool = False):
 
 
 def parse_model_name(
-    model_name: str, outputs: int, pretrained: bool = False, hrrr: bool = False
+    model_name: str,
+    outputs: int,
+    pretrained: bool = False,
+    hrrr: bool = False,
+    meta: bool = False,
 ) -> Any:
     try:
         model = timm.create_model(
@@ -64,7 +68,7 @@ def parse_model_name(
             pretrained=pretrained,
         )
         if hrrr:
-            model = HrrrNet(feature_extractor=model, outputs=outputs)
+            model = HrrrNet(feature_extractor=model, outputs=outputs, meta=meta)
         else:
             try:
                 model.head.fc = nn.Linear(
@@ -91,8 +95,9 @@ def define_net(
     pretrained: bool = False,
     weights_resume: Optional[str] = None,
     new_in_channels: int = net_config.in_channels,
+    meta: bool = False,
 ):
-    model = parse_model_name(model_name, outputs, pretrained, hrrr)
+    model = parse_model_name(model_name, outputs, pretrained, hrrr, meta)
 
     if new_in_channels:
         model = set_new_in_channels(model, new_in_channels, pretrained)

@@ -35,6 +35,7 @@ class Origin(Enum):
 
 @dataclass()
 class DataConfig:
+    num_scl_classes = 12
     meta_keys = ["cloud_cover", "sun_azimuth", "sun_elevation"]
     mean = {
         Origin.landsat: [

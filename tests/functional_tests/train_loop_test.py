@@ -24,7 +24,7 @@ class TestTrainLoop:
                     "weighted_sampler": True,
                     "save_preprocessed": None,
                     "inpaint": True,
-                    "meta_channels_path": None
+                    "meta_channels_path": None,
                 },
                 "net": {
                     "resume_weights": "",
